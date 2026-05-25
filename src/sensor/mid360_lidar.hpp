@@ -1,0 +1,6 @@
+#ifndef SLAM_MID360LIDAR_H
+#define SLAM_MID360LIDAR_H
+
+
+
+#endif
