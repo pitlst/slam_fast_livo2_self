@@ -22,8 +22,6 @@ void config::parser()
     this->height          = parser_config_item<int>(this->_path, toml_data, "height");
     this->offset_x        = parser_config_item<int>(this->_path, toml_data, "offset_x");
     this->offset_y        = parser_config_item<int>(this->_path, toml_data, "offset_y");
-    this->ADC_bit_depth   = parser_config_item<int>(this->_path, toml_data, "ADC_bit_depth");
     this->exposure        = parser_config_item<int>(this->_path, toml_data, "exposure");
     this->gain            = parser_config_item<int>(this->_path, toml_data, "gain");
-    this->balck_level     = parser_config_item<int>(this->_path, toml_data, "balck_level");
 }

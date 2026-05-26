@@ -14,9 +14,13 @@ void __stdcall image_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrame
 {
     if (pFrameInfo)
     {
-        cv::Mat                      img_bayerrg_ = cv::Mat(pFrameInfo->nHeight, pFrameInfo->nWidth, CV_8UC1, pData);
-        std::lock_guard<std::mutex> _lock(_mutex);
-        cv::cvtColor(img_bayerrg_, _frame, cv::COLOR_BayerRG2RGB);
+        cv::Mat img_bayerrg(cv::Size(pFrameInfo->nWidth, pFrameInfo->nHeight), CV_8UC1, pData);
+        cv::Mat result;
+        cv::cvtColor(img_bayerrg, result, cv::COLOR_BayerRG2RGB);
+        {
+            std::lock_guard<std::mutex> _lock(_mutex);
+            std::swap(_frame, result);
+        }
     }
 }
 
@@ -98,6 +102,7 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<config> _config_d
     nRet = MV_CC_StartGrabbing(hk_camera_ptr->handle);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_StartGrabbing fail! nRet {}\n"), nRet));
     fmt::print("hik init\n");
+    return hk_camera_ptr;
 }
 
 hk_camera::~hk_camera()

@@ -16,19 +16,18 @@ int main()
     auto camera       = hsm::make_hk_camera(_config_data);
 
     cv::namedWindow("Camera", cv::WINDOW_AUTOSIZE);
-
+    cv::Mat frame_copy;
     while (true)
     {
-        cv::Mat frame_copy;
         {
             std::lock_guard<std::mutex> lock(_mutex);
-            if (!_frame.empty())
+            if (! _frame.empty())
             {
-                frame_copy = _frame.clone();
+                frame_copy = _frame.clone(); // clone 是必须的，因为下一帧会覆盖 _frame
             }
         }
 
-        if (!frame_copy.empty())
+        if (! frame_copy.empty())
         {
             cv::imshow("Camera", frame_copy);
         }

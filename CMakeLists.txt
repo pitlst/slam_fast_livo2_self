@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------------#
 cmake_minimum_required(VERSION 3.12)
 if(POLICY CMP0146)
-    cmake_policy(SET CMP0146 OLD)  # 允许使用旧的 FindCUDA
+    cmake_policy(SET CMP0146 OLD) # 允许使用旧的 FindCUDA
 endif()
 # 设置项目名称
 set(PROJECT_NAME slam_fast_livo2_self)
@@ -30,8 +30,8 @@ include_directories(/opt/MVS/include)
 # 找到opencv
 set(OpenCV_DIR /media/cheakf/新加卷/workspace/opencv/build)
 find_package(OpenCV REQUIRED)
-# 找到fmt
 find_package(fmt REQUIRED)
+find_package(absl REQUIRED)
 
 # 设置头文件查找路径
 include_directories(
@@ -58,4 +58,15 @@ add_executable(
     src/config/config.hpp
     src/config/config.cpp
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE pthread ${OpenCV_LIBS})
+target_link_libraries(
+    ${PROJECT_NAME} PRIVATE
+    pthread
+    absl::strings
+    absl::str_format
+    absl::numeric
+    absl::int128
+    absl::base
+    absl::utility
+    fmt::fmt
+    ${HIK_LIBS}
+    ${OpenCV_LIBS})

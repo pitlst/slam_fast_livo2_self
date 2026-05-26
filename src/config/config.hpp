@@ -22,10 +22,8 @@ namespace hsm
         int  height;
         int  offset_x;
         int  offset_y;
-        int  ADC_bit_depth;
         int  exposure;
         int  gain;
-        int  balck_level;
 
     private:
         const std::filesystem::path _path;
