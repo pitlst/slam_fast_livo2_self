@@ -27,7 +27,6 @@
 #include "fmt/format.h"
 #include "fmt/compile.h"
 #include "toml.hpp"
-#include "phmap.hpp"
 
 namespace hsm
 {
@@ -145,20 +144,6 @@ namespace hsm
         content.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
         return content;
     }
-
-    // 从hash map中只读的抽取对应的key为hash set
-    template<typename K, typename V>
-    gtl::flat_hash_set<K> extract_keys(const gtl::flat_hash_map<K, V>& map)
-    {
-        gtl::flat_hash_set<K> keys;
-        keys.reserve(map.size());
-        for (const auto& [key, _] : map)
-        {
-            keys.insert(key);
-        }
-        return keys;
-    }
-
 } // namespace hsm
 
 #endif

@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/media/cheakf/新加卷/workspace/opencv/**",
+                "${workspaceFolder}/../opencv/**",
                 "/opt/MVS/include"
             ],
             "defines": [

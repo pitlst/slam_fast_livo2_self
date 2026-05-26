@@ -28,7 +28,7 @@ file(GLOB HIK_LIBS "/opt/MVS/lib/64/*.so")
 file(GLOB HIK_INCLUDE "/opt/MVS/include/*.h")
 include_directories(/opt/MVS/include)
 # 找到opencv
-set(OpenCV_DIR /media/cheakf/新加卷/workspace/opencv/build)
+set(OpenCV_DIR /mnt/data/opencv/build)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
