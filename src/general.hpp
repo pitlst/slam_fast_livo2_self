@@ -9,111 +9,19 @@
 #include <concepts>
 #include <type_traits>
 #include <vector>
-#include <format>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <exception>
 
+#include "fmt/core.h"
+#include "fmt/format.h"
+#include "fmt/compile.h"
+#include "toml.hpp"
+#include "phmap.hpp"
+
 namespace hsm
 {
-    struct Error
-    {
-        enum class Code {
-            sensor_camera = 0,
-            sensor_lidar,
-            config,
-            general,
-            main
-        };
-        
-        static constexpr std::array<std::string_view, 5> _Code_str = {
-            "sensor_camera",
-            "sensor_lidar",
-            "config",
-            "general",
-            "main"};
-
-        const Code               code;
-        std::string              message;
-        std::vector<std::string> context;
-
-        Error(Code c, std::string msg, std::vector<std::string> ctx = {}) noexcept
-            : code(c), message(std::move(msg)), context(std::move(ctx)) {}
-
-        inline std::string to_string() const noexcept
-        {
-            std::string context_joined;
-            for (size_t i = 0; i < context.size(); ++i)
-            {
-                if (i > 0)
-                    context_joined += "\n    at ";
-                context_joined += context[i];
-            }
-            return std::format(
-                "[{}]{}{}",
-                _Code_str.at(static_cast<int>(code)),
-                context_joined.empty() ? "" : std::format("\n    at {}", context_joined),
-                message.empty() ? "" : std::format("\n    {}", message));
-        }
-    };
-
-    template<Error::Code code>
-    inline std::unexpected<Error> make_error(std::string_view msg, std::string_view func = "", const std::source_location& location = std::source_location::current()) noexcept
-    {
-        std::vector<std::string> ctx;
-        if (! func.empty())
-            ctx.emplace_back(std::format("{}:{} {}", location.file_name(), location.line(), func));
-        else
-            ctx.emplace_back(std::format("{}:{} {}", location.file_name(), location.line(), location.function_name()));
-        return std::unexpected<Error>(Error {code, std::string(msg), std::move(ctx)});
-    }
-
-    inline std::unexpected<Error> make_error(Error::Code code, std::string_view msg, std::string_view func = "", const std::source_location& location = std::source_location::current()) noexcept
-    {
-        std::vector<std::string> ctx;
-        if (! func.empty())
-            ctx.emplace_back(std::format("{}:{} {}", location.file_name(), location.line(), func));
-        else
-            ctx.emplace_back(std::format("{}:{} {}", location.file_name(), location.line(), location.function_name()));
-        return std::unexpected<Error>(Error {code, std::string(msg), std::move(ctx)});
-    }
-
-    template<typename T>
-    struct is_expected : std::false_type
-    {
-    };
-
-    template<typename T, typename E>
-    struct is_expected<std::expected<T, E>> : std::true_type
-    {
-    };
-
-    template<typename T>
-    concept expected_like = is_expected<T>::value;
-
-    template<Error::Code code, std::invocable F>
-        requires expected_like<std::invoke_result_t<F>>
-    inline auto try_catch(F&& body, const std::source_location& location = std::source_location::current()) noexcept -> std::invoke_result_t<F>
-    {
-        auto _context = std::format("{}:{} {}", location.file_name(), location.line(), location.function_name());
-        try
-        {
-            auto result = body();
-            if (! result)
-                result.error().context.emplace_back(_context);
-            return result;
-        }
-        catch (const std::exception& e)
-        {
-            return make_error<code>(e.what(), _context);
-        }
-        catch (...)
-        {
-            return make_error<code>("unknown error", _context);
-        }
-    }
-
     template<typename BaseException>
     class enhanced_exception : public BaseException
     {
@@ -180,88 +88,68 @@ namespace hsm
         if (condition)
             throw_enhanced(ExceptionType(error_message), location);
     }
+
+    // 读取toml配置中的数据
+    template<typename T, typename... Keys>
+    T parser_config_item(const std::filesystem::path& input_path, const toml::table& toml_data, std::string_view first_key, Keys... rest_keys)
+    {
+        // 链式访问配置节点: toml_data[key1][key2][key3]...
+        auto node = toml_data[first_key];
+        ((node = node[rest_keys]), ...);
+
+        std::optional<T> value = node.value<T>();
+        if (! value.has_value())
+        {
+            // 构建完整键路径用于错误信息 (如: "database.host")
+            std::vector<std::string> full_key_array;
+            full_key_array.emplace_back(first_key);
+            ((full_key_array.emplace_back(fmt::format(FMT_COMPILE("{}"), rest_keys))), ...);
+
+            std::string full_key = absl::StrJoin(full_key_array, ".");
+
+            throw_runtime(fmt::format(FMT_COMPILE("路径{},配置项{}类型不正确或不存在\n"), input_path.string(), full_key));
+        }
+        return value.value();
+    }
+
+    // 检查文件是否存在
+    inline void check_file_exist(const std::filesystem::path& input_path)
+    {
+        throw_if(! std::filesystem::exists(input_path), fmt::format(FMT_COMPILE("路径{}不存在\n"), input_path.string()));
+        throw_if(! std::filesystem::is_regular_file(input_path), fmt::format(FMT_COMPILE("路径{}对应不是文件\n"), input_path.string()));
+    }
+
+    // 检查文件夹是否存在
+    inline void check_dir_exist(const std::filesystem::path& input_path)
+    {
+        throw_if(! std::filesystem::exists(input_path), fmt::format(FMT_COMPILE("路径{}不存在\n"), input_path.string()));
+        throw_if(! std::filesystem::is_directory(input_path), fmt::format(FMT_COMPILE("路径{}对应不是文件夹\n"), input_path.string()));
+    }
+
+    // 读取文件内容
+    inline std::string read_file(const std::filesystem::path& input_path)
+    {
+        check_file_exist(input_path);
+        std::string content;
+        content.reserve(std::filesystem::file_size(input_path));
+        std::ifstream file(input_path);
+        content.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+        return content;
+    }
+
+    // 从hash map中只读的抽取对应的key为hash set
+    template<typename K, typename V>
+    gtl::flat_hash_set<K> extract_keys(const gtl::flat_hash_map<K, V>& map)
+    {
+        gtl::flat_hash_set<K> keys;
+        keys.reserve(map.size());
+        for (const auto& [key, _] : map)
+        {
+            keys.insert(key);
+        }
+        return keys;
+    }
+
 } // namespace hsm
-
-#define ETRY(var, expr)                                             \
-    auto&& _expected_##var = (expr);                                \
-    if (! (_expected_##var)) [[unlikely]]                           \
-    {                                                               \
-        return std::unexpected(std::move(_expected_##var).error()); \
-    }                                                               \
-    auto var = std::move(_expected_##var).value();
-
-#define ECHECKE(expr)                                                 \
-    do                                                                \
-    {                                                                 \
-        auto&& _expected_tmp = (expr);                                \
-        if (! _expected_tmp) [[unlikely]]                             \
-        {                                                             \
-            return std::unexpected(std::move(_expected_tmp).error()); \
-        }                                                             \
-    }                                                                 \
-    while (0)
-
-#define ECHECKV(expected_var)                                        \
-    do                                                               \
-    {                                                                \
-        if (! (expected_var)) [[unlikely]]                           \
-        {                                                            \
-            return std::unexpected(std::move(expected_var).error()); \
-        }                                                            \
-    }                                                                \
-    while (0)
-
-#define STRY(var, expr, error_ptr)                                                    \
-    auto&& _expected_##var = (expr);                                                  \
-    if (! (_expected_##var)) [[unlikely]]                                             \
-    {                                                                                 \
-        error_ptr = std::make_shared<hsm::Error>(std::move(_expected_##var).error()); \
-        return false;                                                                 \
-    }                                                                                 \
-    auto var = std::move(_expected_##var).value();
-
-#define SCHECKE(expr, error_ptr)                                                        \
-    do                                                                                  \
-    {                                                                                   \
-        auto&& _expected_tmp = (expr);                                                  \
-        if (! _expected_tmp) [[unlikely]]                                               \
-        {                                                                               \
-            error_ptr = std::make_shared<hsm::Error>(std::move(_expected_tmp).error()); \
-            return false;                                                               \
-        }                                                                               \
-    }                                                                                   \
-    while (0)
-
-#define SCHECKV(expected_var, error_ptr)                                               \
-    do                                                                                 \
-    {                                                                                  \
-        if (! (expected_var)) [[unlikely]]                                             \
-        {                                                                              \
-            error_ptr = std::make_shared<hsm::Error>(std::move(expected_var).error()); \
-            return false;                                                              \
-        }                                                                              \
-    }                                                                                  \
-    while (0)
-
-#define MTRY(var, expr)                                                \
-    auto _expected_##var = (expr);                                     \
-    if (! (_expected_##var)) [[unlikely]]                              \
-    {                                                                  \
-        std::cout << _expected_##var.error().to_string() << std::endl; \
-        return 1;                                                      \
-    }                                                                  \
-    auto var = std::move(_expected_##var.value());
-
-#define MCHECKE(expr)                                                    \
-    do                                                                   \
-    {                                                                    \
-        auto&& _expected_tmp = (expr);                                   \
-        if (! _expected_tmp) [[unlikely]]                                \
-        {                                                                \
-            std::cout << _expected_tmp.error().to_string() << std::endl; \
-            return 1;                                                    \
-        }                                                                \
-    }                                                                    \
-    while (0)
 
 #endif

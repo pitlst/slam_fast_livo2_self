@@ -30,6 +30,8 @@ include_directories(/opt/MVS/include)
 # 找到opencv
 set(OpenCV_DIR /media/cheakf/新加卷/workspace/opencv/build)
 find_package(OpenCV REQUIRED)
+# 找到fmt
+find_package(fmt REQUIRED)
 
 # 设置头文件查找路径
 include_directories(
@@ -37,6 +39,7 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/libs/toml++
+    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
 )
 
 #--------------------------------------------------------------------------------------#

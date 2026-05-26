@@ -7,7 +7,9 @@
                 "/media/cheakf/新加卷/workspace/opencv/**",
                 "/opt/MVS/include"
             ],
-            "defines": [],
+            "defines": [
+                "PROJECT_PATH=\"/media/cheakf/新加卷/workspace/slam_fast_livo2_self\""
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c23",
             "cppStandard": "gnu++23",
