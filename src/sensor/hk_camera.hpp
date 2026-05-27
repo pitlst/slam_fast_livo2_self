@@ -18,13 +18,15 @@ namespace hsm
     // #define DEBUE 1
     struct hk_camera
     {
-        friend std::unique_ptr<hk_camera> make_hk_camera(std::shared_ptr<config> _config_data);
+        friend std::unique_ptr<hk_camera> make_hk_camera(std::shared_ptr<camera_config> _config_data);
     public:
         hk_camera() = default;
         ~hk_camera();
 
+        cv::Mat get();
+
     private:
-        std::shared_ptr<config> _config;
+        std::shared_ptr<camera_config> _config;
         std::mutex              frame_mutex;
         cv::Mat                 frame;
 
@@ -32,12 +34,13 @@ namespace hsm
         void* handle = nullptr;
     };
 
-    std::unique_ptr<hk_camera> make_hk_camera(std::shared_ptr<config> _config_data);
+    // 工厂函数
+    std::unique_ptr<hk_camera> make_hk_camera(std::shared_ptr<camera_config> _config_data);
 } // namespace hsm
 
 // 暂时仅做了同时接入1个海康相机的支持
-extern void __stdcall image_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrameInfo, void* pUser);
-extern cv::Mat        _frame;
-extern std::mutex     _mutex;
+extern void __stdcall _hk_camera_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrameInfo, void* pUser);
+extern cv::Mat        _hk_camera_frame;
+extern std::mutex     _hk_camera_mutex;
 
 #endif

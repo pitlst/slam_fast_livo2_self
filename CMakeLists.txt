@@ -29,18 +29,12 @@ file(GLOB HIK_INCLUDE "/opt/MVS/include/*.h")
 include_directories(/opt/MVS/include)
 # 找到opencv
 set(OpenCV_DIR /mnt/data/opencv/build)
+# 找到livox sdk
+set(LIVOX_SDK /mnt/data/Livox-SDK2)
+# 其他的库
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
-
-# 设置头文件查找路径
-include_directories(
-    /opt/MVS/include
-    ${OpenCV_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/libs/toml++
-    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
-)
 
 #--------------------------------------------------------------------------------------#
 #   项目编译设置
@@ -58,6 +52,15 @@ add_executable(
     src/config/config.hpp
     src/config/config.cpp
 )
+target_include_directories(
+    ${PROJECT_NAME} PRIVATE
+    /opt/MVS/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${LIVOX_SDK}/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/libs/toml++
+    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
+)
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE
     pthread
@@ -68,5 +71,6 @@ target_link_libraries(
     absl::base
     absl::utility
     fmt::fmt
-    ${HIK_LIBS}
-    ${OpenCV_LIBS})
+    ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
+    ${OpenCV_LIBS}
+    ${HIK_LIBS})

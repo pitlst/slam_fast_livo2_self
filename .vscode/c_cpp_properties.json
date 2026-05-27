@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../opencv/**",
-                "/opt/MVS/include"
+                "${workspaceFolder}/../Livox-SDK2/include/**",
+                "/opt/MVS/include/**"
             ],
             "defines": [
                 "PROJECT_PATH=\"/media/cheakf/新加卷/workspace/slam_fast_livo2_self\""

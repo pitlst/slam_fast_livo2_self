@@ -7,10 +7,10 @@
 
 using namespace hsm;
 
-cv::Mat    _frame;
-std::mutex _mutex;
+cv::Mat    _hk_camera_frame;
+std::mutex _hk_camera_mutex;
 
-void __stdcall image_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrameInfo, void* pUser)
+void __stdcall _hk_camera_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrameInfo, void* pUser)
 {
     if (pFrameInfo)
     {
@@ -18,41 +18,29 @@ void __stdcall image_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrame
         cv::Mat result;
         cv::cvtColor(img_bayerrg, result, cv::COLOR_BayerRG2RGB);
         {
-            std::lock_guard<std::mutex> _lock(_mutex);
-            std::swap(_frame, result);
+            std::lock_guard<std::mutex> _lock(_hk_camera_mutex);
+            std::swap(_hk_camera_frame, result);
         }
     }
 }
 
-std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<config> _config_data)
+std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<camera_config> _config_data)
 {
-    throw_if(!_config_data, "配置文件的指针为空\n");
-    // 根据json解析参数
-
+    throw_if(! _config_data, "配置文件的指针为空\n");
     // 创建相机实例
     auto hk_camera_ptr = std::make_unique<hk_camera>();
-
     // 相机初始化
     MV_CC_DEVICE_INFO_LIST stDeviceList;
     memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST));
     // 枚举设备
     // enum device
     int nRet = MV_CC_EnumDevices(MV_USB_DEVICE, &stDeviceList);
-    throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("V_CC_EnumDevices fail! nRet {}\n"), nRet));
-    if (stDeviceList.nDeviceNum > 0)
+    throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("枚举设备失败，错误号为：{}\n"), nRet));
+    throw_if(stDeviceList.nDeviceNum <= 0, "没有找到相机设备");
+    for (int i = 0; i < stDeviceList.nDeviceNum; i++)
     {
-        for (int i = 0; i < stDeviceList.nDeviceNum; i++)
-        {
-            MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
-            if (NULL == pDeviceInfo)
-            {
-                throw_runtime(fmt::format(FMT_COMPILE("找到的设备报错，对应设备号为 {}\n"), i));
-            }
-        }
-    }
-    else
-    {
-        throw_runtime("Find No Devices!");
+        MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
+        throw_if(pDeviceInfo == NULL, fmt::format(FMT_COMPILE("找到的设备报错，对应设备号为 {}\n"), i));
     }
 
     unsigned int nIndex = _config_data->device_id;
@@ -91,17 +79,17 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<config> _config_d
     // bayerRG格式0x01080009
     nRet = MV_CC_SetEnumValue(hk_camera_ptr->handle, "PixelFormat", 0x01080009);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置传输图像格式错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "Gain",  _config_data->gain);
+    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "Gain", _config_data->gain);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置增益错误,错误码: {}\n"), nRet));
     // 注册抓图回调
     // register image callback
-    nRet = MV_CC_RegisterImageCallBackEx(hk_camera_ptr->handle, image_callback, hk_camera_ptr->handle);
+    nRet = MV_CC_RegisterImageCallBackEx(hk_camera_ptr->handle, _hk_camera_callback, hk_camera_ptr->handle);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_RegisterImageCallBackEx fail! nRet {}\n"), nRet));
     // 开始取流
     // start grab image
     nRet = MV_CC_StartGrabbing(hk_camera_ptr->handle);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_StartGrabbing fail! nRet {}\n"), nRet));
-    fmt::print("hik init\n");
+    fmt::print("[hik camera] 相机初始化完成\n");
     return hk_camera_ptr;
 }
 
@@ -142,4 +130,16 @@ hk_camera::~hk_camera()
             this->handle = NULL;
         }
     }
+    fmt::print("[hik camera] 成功关闭\n");
+}
+
+cv::Mat hk_camera::get()
+{
+    cv::Mat                     frame_copy;
+    std::lock_guard<std::mutex> lock(_hk_camera_mutex);
+    if (! _hk_camera_frame.empty())
+    {
+        frame_copy = _hk_camera_frame.clone(); // clone 是必须的，因为下一帧会覆盖 _frame
+    }
+    return frame_copy;
 }
