@@ -27,9 +27,6 @@ namespace hsm
 
     private:
         std::shared_ptr<camera_config> _config;
-        std::mutex              frame_mutex;
-        cv::Mat                 frame;
-
         // 海康相机指针
         void* handle = nullptr;
     };
