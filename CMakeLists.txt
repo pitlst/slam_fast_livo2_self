@@ -27,12 +27,15 @@ file(GLOB HIK_LIBS "/opt/MVS/lib/64/*.so")
 # 找到海康头文件，保存到变量里
 file(GLOB HIK_INCLUDE "/opt/MVS/include/*.h")
 include_directories(/opt/MVS/include)
-# 找到opencv
-set(OpenCV_DIR /mnt/data/opencv/build)
 # 找到livox sdk
 set(LIVOX_SDK /mnt/data/Livox-SDK2)
-# 其他的库
+# 找到opencv
+set(OpenCV_DIR /mnt/data/opencv/build)
 find_package(OpenCV REQUIRED)
+# 找到open3d
+set(Open3D_DIR /mnt/data/open3d_install/lib/cmake/Open3D)
+find_package(Open3D REQUIRED)
+# 其他的库
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
 
@@ -59,7 +62,7 @@ target_include_directories(
     ${LIVOX_SDK}/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/libs/toml++
-    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
+    ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
 )
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE

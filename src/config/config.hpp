@@ -27,29 +27,6 @@ namespace hsm
     private:
         const std::filesystem::path _path;
     };
-
-    struct mid360_config
-    {
-    public:
-        mid360_config();
-        explicit mid360_config(const std::filesystem::path& input_path);
-
-    private:
-        void parser();
-
-    public:
-        std::string host_ip;
-        std::string multicast_ip;
-        int cmd_port;
-        int push_port;
-        int point_port;
-        int imu_port;
-        int log_port;
-        std::string lidar_type;
-
-    private:
-        const std::filesystem::path _path;
-    };
 } // namespace hsm
 
 #endif

@@ -1,39 +1,47 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <chrono>
 #include <stdlib.h>
 
+#include "readerwriterqueue.h"
 #include "sensor/hk_camera.hpp"
 
 using namespace hsm;
 
-cv::Mat    _hk_camera_frame;
-std::mutex _hk_camera_mutex;
+static frame_queue _camera_queue(K_BUFFER_CAPACITY);
 
 void __stdcall _hk_camera_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* pFrameInfo, void* pUser)
 {
     if (pFrameInfo)
     {
+        // 相机时间戳
+        uint64_t device_ts = 0;
+        {
+            auto hi   = static_cast<uint64_t>(pFrameInfo->nDevTimeStampHigh);
+            auto lo   = static_cast<uint64_t>(pFrameInfo->nDevTimeStampLow);
+            device_ts = (hi << 32) | lo;
+        }
+        // 主机时间戳
+        auto host_ts = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        // 图片数据
         cv::Mat img_bayerrg(cv::Size(pFrameInfo->nWidth, pFrameInfo->nHeight), CV_8UC1, pData);
         cv::Mat result;
         cv::cvtColor(img_bayerrg, result, cv::COLOR_BayerRG2RGB);
-        {
-            std::lock_guard<std::mutex> _lock(_hk_camera_mutex);
-            std::swap(_hk_camera_frame, result);
-        }
+        // 加入缓冲区
+        timestamped<cv::Mat> item {device_ts, host_ts, std::move(result)};
+        _camera_queue.try_enqueue(std::move(item));
     }
 }
 
-std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<camera_config> _config_data)
+std::unique_ptr<hk_camera> hsm::make_hk_camera(const std::filesystem::path& input_path)
 {
-    throw_if(! _config_data, "配置文件的指针为空\n");
-    // 创建相机实例
+    auto config_data   = std::make_unique<camera_config>(input_path);
     auto hk_camera_ptr = std::make_unique<hk_camera>();
-    // 相机初始化
+
     MV_CC_DEVICE_INFO_LIST stDeviceList;
     memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST));
-    // 枚举设备
-    // enum device
+
     int nRet = MV_CC_EnumDevices(MV_USB_DEVICE, &stDeviceList);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("枚举设备失败，错误号为：{}\n"), nRet));
     throw_if(stDeviceList.nDeviceNum <= 0, "没有找到相机设备");
@@ -43,50 +51,37 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<camera_config> _c
         throw_if(pDeviceInfo == NULL, fmt::format(FMT_COMPILE("找到的设备报错，对应设备号为 {}\n"), i));
     }
 
-    unsigned int nIndex = _config_data->device_id;
-    // 选择设备并创建句柄
-    // select device and create handle
-    nRet = MV_CC_CreateHandle(&(hk_camera_ptr->handle), stDeviceList.pDeviceInfo[nIndex]);
+    unsigned int nIndex = config_data->device_id;
+    nRet                = MV_CC_CreateHandle(&(hk_camera_ptr->handle), stDeviceList.pDeviceInfo[nIndex]);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_CreateHandle fail! nRet {}\n"), nRet));
-    // 打开设备
-    // open device
     nRet = MV_CC_OpenDevice(hk_camera_ptr->handle);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_OpenDevice fail! nRet {}\n"), nRet));
-    // 设置触发模式为off
-    // set trigger mode as off
     nRet = MV_CC_SetEnumValue(hk_camera_ptr->handle, "TriggerMode", 0);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_SetTriggerMode fail! nRet {}\n"), nRet));
 
-    // ch：设置曝光时间，图像的长宽,和所取图像的偏移
-    // 注意，这里对offset的值应当提前归零，防止出现长度溢出问题
     nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetX", 0);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetX错误,错误码: {}\n"), nRet));
     nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetY", 0);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetY错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "ExposureTime", _config_data->exposure);
+    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "ExposureTime", config_data->exposure);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置曝光错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Width", _config_data->width);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Width", config_data->width);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置Width错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Height", _config_data->height);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Height", config_data->height);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置Height错误,错误码: {}\n"), nRet));
-    // 这里设置相机偏移两遍是因为有的时候上次窗长宽与偏移相冲突
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetX", _config_data->offset_x);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetX", config_data->offset_x);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetX错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetY", _config_data->offset_y);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetY", config_data->offset_y);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetY错误,错误码: {}\n"), nRet));
 
-    // RGB格式0x02180014
-    // bayerRG格式0x01080009
     nRet = MV_CC_SetEnumValue(hk_camera_ptr->handle, "PixelFormat", 0x01080009);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置传输图像格式错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "Gain", _config_data->gain);
+    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "Gain", config_data->gain);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置增益错误,错误码: {}\n"), nRet));
-    // 注册抓图回调
-    // register image callback
-    nRet = MV_CC_RegisterImageCallBackEx(hk_camera_ptr->handle, _hk_camera_callback, hk_camera_ptr->handle);
+
+    nRet = MV_CC_RegisterImageCallBackEx(hk_camera_ptr->handle, _hk_camera_callback, nullptr);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_RegisterImageCallBackEx fail! nRet {}\n"), nRet));
-    // 开始取流
-    // start grab image
+
     nRet = MV_CC_StartGrabbing(hk_camera_ptr->handle);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_StartGrabbing fail! nRet {}\n"), nRet));
     fmt::print("[hik camera] 相机初始化完成\n");
@@ -95,8 +90,6 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera(std::shared_ptr<camera_config> _c
 
 hk_camera::~hk_camera()
 {
-    // 停止取流
-    // end grab image
     int nRet = MV_CC_StopGrabbing(this->handle);
     if (MV_OK != nRet)
     {
@@ -104,8 +97,6 @@ hk_camera::~hk_camera()
         exit(1);
     }
 
-    // 关闭设备
-    // close device
     nRet = MV_CC_CloseDevice(this->handle);
     if (MV_OK != nRet)
     {
@@ -113,8 +104,6 @@ hk_camera::~hk_camera()
         exit(1);
     }
 
-    // 销毁句柄
-    // destroy handle
     nRet = MV_CC_DestroyHandle(this->handle);
     if (MV_OK != nRet)
     {
@@ -133,13 +122,12 @@ hk_camera::~hk_camera()
     fmt::print("[hik camera] 成功关闭\n");
 }
 
-cv::Mat hk_camera::get()
+timestamped<cv::Mat> hk_camera::get()
 {
-    cv::Mat                     frame_copy;
-    std::lock_guard<std::mutex> lock(_hk_camera_mutex);
-    if (! _hk_camera_frame.empty())
+    timestamped<cv::Mat> item;
+    if (_camera_queue.try_dequeue(item))
     {
-        frame_copy = _hk_camera_frame.clone(); // clone 是必须的，因为下一帧会覆盖 _frame
+        return std::move(item);
     }
-    return frame_copy;
+    return {};
 }

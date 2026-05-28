@@ -1,6 +1,9 @@
 #ifndef SLAM_GENERAL_H
 #define SLAM_GENERAL_H
 
+#include <cstddef>
+#include <cstdint>
+
 #include <expected>
 #include <string>
 #include <string_view>
@@ -144,6 +147,17 @@ namespace hsm
         content.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
         return content;
     }
+
+    template<typename T>
+    struct timestamped
+    {
+        uint64_t device_timestamp;
+        int64_t  host_timestamp;
+        T        payload;
+    };
+
+    // 所有传感器缓冲区的大小限制
+    inline constexpr size_t K_BUFFER_CAPACITY = 64;
 } // namespace hsm
 
 #endif
