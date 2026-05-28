@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../opencv/**",
                 "${workspaceFolder}/../Livox-SDK2/include/**",
+                "${workspaceFolder}/../open3d_install/include/**",
                 "/opt/MVS/include/**"
             ],
             "defines": [

@@ -40,7 +40,7 @@ namespace hsm
         enhanced_exception(const BaseException& original_exception, const std::string& add_message, const std::source_location& location)
             : BaseException(original_exception)
         {
-            this->enhanced_message = std::format(
+            this->enhanced_message = fmt::format(
                 "[{}:{}] {}() - \n-----Add Info-----\n{}\n-----Error-----\n{}",
                 location.file_name(),
                 location.line(),
@@ -51,7 +51,7 @@ namespace hsm
         enhanced_exception(const BaseException& original_exception, const std::source_location& location)
             : BaseException(original_exception)
         {
-            this->enhanced_message = std::format(
+            this->enhanced_message = fmt::format(
                 "[{}:{}] {}() - \n-----Error-----\n{}",
                 location.file_name(),
                 location.line(),

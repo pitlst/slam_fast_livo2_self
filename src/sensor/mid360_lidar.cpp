@@ -66,7 +66,7 @@ std::unique_ptr<livox_lidar> hsm::make_livox_lidar(const std::filesystem::path& 
 {
     auto lidar_ptr = std::make_unique<livox_lidar>();
     auto label     = LivoxLidarSdkInit(input_path.c_str());
-    throw_if(label, fmt::format(FMT_COMPILE("LivoxLidarSdkInit fail!,激光雷达初始化失败\n")));
+    throw_if(!label, fmt::format(FMT_COMPILE("LivoxLidarSdkInit fail!,激光雷达初始化失败\n")));
 
     SetLivoxLidarPointCloudCallBack(_livox_point_callback, nullptr);
     SetLivoxLidarImuDataCallback(_livox_imu_callback, nullptr);
@@ -82,7 +82,7 @@ livox_lidar::~livox_lidar()
     fmt::print("[Livox] 成功关闭\n");
 }
 
-timestamped<point_data> livox_lidar::get_points(uint64_t& timestamp)
+timestamped<point_data> livox_lidar::get_points()
 {
     timestamped<point_data> item;
     if (_point_queue.try_dequeue(item))
@@ -92,7 +92,7 @@ timestamped<point_data> livox_lidar::get_points(uint64_t& timestamp)
     return {};
 }
 
-timestamped<imu_data> livox_lidar::get_imu(uint64_t& timestamp)
+timestamped<imu_data> livox_lidar::get_imu()
 {
     timestamped<imu_data> item;
     if (_imu_queue.try_dequeue(item))

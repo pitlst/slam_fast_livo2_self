@@ -27,8 +27,8 @@ namespace hsm
     public:
         ~livox_lidar();
 
-        timestamped<point_data> get_points(uint64_t& timestamp);
-        timestamped<imu_data>   get_imu(uint64_t& timestamp);
+        timestamped<point_data> get_points();
+        timestamped<imu_data>   get_imu();
     };
 
     std::unique_ptr<livox_lidar> make_livox_lidar(const std::filesystem::path& input_path = std::filesystem::path(PROJECT_PATH) / "config" / "mid360.json");

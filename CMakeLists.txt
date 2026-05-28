@@ -32,12 +32,10 @@ set(LIVOX_SDK /mnt/data/Livox-SDK2)
 # 找到opencv
 set(OpenCV_DIR /mnt/data/opencv/build)
 find_package(OpenCV REQUIRED)
-# 找到open3d
-set(Open3D_DIR /mnt/data/open3d_install/lib/cmake/Open3D)
-find_package(Open3D REQUIRED)
 # 其他的库
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 #--------------------------------------------------------------------------------------#
 #   项目编译设置
@@ -74,6 +72,7 @@ target_link_libraries(
     absl::base
     absl::utility
     fmt::fmt
+    Eigen3::Eigen
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
     ${HIK_LIBS})
