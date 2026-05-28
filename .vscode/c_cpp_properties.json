@@ -6,8 +6,9 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../opencv/**",
                 "${workspaceFolder}/../Livox-SDK2/include/**",
-                "${workspaceFolder}/../open3d_install/include/**",
-                "/opt/MVS/include/**"
+                "${workspaceFolder}/../rerun_sdk_install/include/**",
+                "/opt/MVS/include/**",
+                "/usr/include/eigen3"
             ],
             "defines": [
                 "PROJECT_PATH=\"/media/cheakf/新加卷/workspace/slam_fast_livo2_self\""

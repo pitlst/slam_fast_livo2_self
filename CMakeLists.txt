@@ -32,6 +32,9 @@ set(LIVOX_SDK /mnt/data/Livox-SDK2)
 # 找到opencv
 set(OpenCV_DIR /mnt/data/opencv/build)
 find_package(OpenCV REQUIRED)
+# 找到rerun，用于点云可视化
+set(rerun_sdk_DIR /mnt/data/rerun_sdk_install/lib/cmake/rerun_sdk)
+find_package(rerun_sdk REQUIRED)
 # 其他的库
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
@@ -73,6 +76,7 @@ target_link_libraries(
     absl::utility
     fmt::fmt
     Eigen3::Eigen
+    rerun_sdk
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
     ${HIK_LIBS})
