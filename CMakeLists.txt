@@ -48,13 +48,18 @@ add_compile_definitions(PROJECT_PATH="${PROJECT_SOURCE_DIR}/")
 add_executable(
     ${PROJECT_NAME}
     src/main.cpp
-    src/general.hpp
+    src/common/common.hpp
+    src/common/exception.hpp
+    src/common/struct.hpp
+    src/config/config.hpp
+    src/config/config.cpp
+    src/time_sync/time_sync.hpp
+    src/time_sync/time_sync.cpp
     src/sensor/hk_camera.hpp
     src/sensor/hk_camera.cpp
     src/sensor/mid360_lidar.hpp
     src/sensor/mid360_lidar.cpp
-    src/config/config.hpp
-    src/config/config.cpp
+
 )
 target_include_directories(
     ${PROJECT_NAME} PRIVATE

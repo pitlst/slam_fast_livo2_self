@@ -1,10 +1,3 @@
-#include <string>
-#include <sstream>
-#include <stdexcept>
-#include <chrono>
-#include <stdlib.h>
-
-#include "readerwriterqueue.h"
 #include "sensor/hk_camera.hpp"
 
 using namespace hsm;
@@ -23,7 +16,7 @@ void __stdcall _hk_camera_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* p
             device_ts = (hi << 32) | lo;
         }
         // 主机时间戳
-        auto host_ts = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        uint64_t host_ts = hsm::get_now_pc_time();
         // 图片数据
         cv::Mat img_bayerrg(cv::Size(pFrameInfo->nWidth, pFrameInfo->nHeight), CV_8UC1, pData);
         cv::Mat result;

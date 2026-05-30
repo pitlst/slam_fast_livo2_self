@@ -27,28 +27,6 @@ namespace
         float b = std::clamp(1.5f - std::abs(1.0f - v * 4.0f - 2.0f), 0.0f, 1.0f);
         return {pt, Eigen::Vector3d(r, g, b)};
     }
-
-    // 点云 3D → 2D 投影绘制 (XY 俯视图)
-    void draw_pointcloud(cv::Mat& canvas,
-                         const std::vector<Eigen::Vector3d>& pts,
-                         const std::vector<Eigen::Vector3d>& colors,
-                         double scale_m_to_px = 80.0)
-    {
-        canvas.setTo(cv::Scalar(25, 25, 38));
-        int cx = canvas.cols / 2;
-        int cy = canvas.rows / 2;
-        for (size_t i = 0; i < pts.size(); ++i)
-        {
-            int px = cx + static_cast<int>(pts[i].x() * scale_m_to_px);
-            int py = cy - static_cast<int>(pts[i].y() * scale_m_to_px);
-            if (px < 0 || px >= canvas.cols || py < 0 || py >= canvas.rows) continue;
-            auto& c = colors[i];
-            canvas.at<cv::Vec3b>(py, px) = cv::Vec3b(
-                static_cast<uchar>(c.z() * 255),
-                static_cast<uchar>(c.y() * 255),
-                static_cast<uchar>(c.x() * 255));
-        }
-    }
 } // namespace
 
 int main()

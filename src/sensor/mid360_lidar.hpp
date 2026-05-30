@@ -1,15 +1,16 @@
-#ifndef SLAM_MID360LIDAR_H
-#define SLAM_MID360LIDAR_H
+#ifndef HSM_MID360LIDAR_H
+#define HSM_MID360LIDAR_H
 
-#include <vector>
-#include <memory>
-#include <filesystem>
+#include <cstring>
+#include <bit>
 
 #include "livox_lidar_def.h"
 #include "livox_lidar_api.h"
 #include "readerwriterqueue.h"
 
-#include "general.hpp"
+#include "common/common.hpp"
+#include "common/struct.hpp"
+#include "common/exception.hpp"
 #include "config/config.hpp"
 
 namespace hsm

@@ -1,7 +1,3 @@
-#include <cstring>
-#include <bit>
-
-
 #include "sensor/mid360_lidar.hpp"
 
 using namespace hsm;
@@ -29,7 +25,7 @@ void _livox_point_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEt
     // 雷达时间戳
     uint64_t device_ts = _parse_livox_timestamp(data->timestamp);
     // 主机时间戳
-    auto host_ts = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    uint64_t host_ts = hsm::get_now_pc_time();
     // 雷达数据
     auto*      raw = (LivoxLidarCartesianHighRawPoint*) data->data;
     point_data buf(raw, raw + data->dot_num);

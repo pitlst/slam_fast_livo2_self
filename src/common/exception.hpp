@@ -17,19 +17,11 @@
 #include <stdexcept>
 #include <exception>
 #include <filesystem>
+#include <chrono>
 
-#include "absl/numeric/int128.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/str_join.h"
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "fmt/compile.h"
-#include "toml.hpp"
 
 namespace hsm
 {
@@ -100,64 +92,7 @@ namespace hsm
             throw_enhanced(ExceptionType(error_message), location);
     }
 
-    // 读取toml配置中的数据
-    template<typename T, typename... Keys>
-    T parser_config_item(const std::filesystem::path& input_path, const toml::table& toml_data, std::string_view first_key, Keys... rest_keys)
-    {
-        // 链式访问配置节点: toml_data[key1][key2][key3]...
-        auto node = toml_data[first_key];
-        ((node = node[rest_keys]), ...);
 
-        std::optional<T> value = node.value<T>();
-        if (! value.has_value())
-        {
-            // 构建完整键路径用于错误信息 (如: "database.host")
-            std::vector<std::string> full_key_array;
-            full_key_array.emplace_back(first_key);
-            ((full_key_array.emplace_back(fmt::format(FMT_COMPILE("{}"), rest_keys))), ...);
-
-            std::string full_key = absl::StrJoin(full_key_array, ".");
-
-            throw_runtime(fmt::format(FMT_COMPILE("路径{},配置项{}类型不正确或不存在\n"), input_path.string(), full_key));
-        }
-        return value.value();
-    }
-
-    // 检查文件是否存在
-    inline void check_file_exist(const std::filesystem::path& input_path)
-    {
-        throw_if(! std::filesystem::exists(input_path), fmt::format(FMT_COMPILE("路径{}不存在\n"), input_path.string()));
-        throw_if(! std::filesystem::is_regular_file(input_path), fmt::format(FMT_COMPILE("路径{}对应不是文件\n"), input_path.string()));
-    }
-
-    // 检查文件夹是否存在
-    inline void check_dir_exist(const std::filesystem::path& input_path)
-    {
-        throw_if(! std::filesystem::exists(input_path), fmt::format(FMT_COMPILE("路径{}不存在\n"), input_path.string()));
-        throw_if(! std::filesystem::is_directory(input_path), fmt::format(FMT_COMPILE("路径{}对应不是文件夹\n"), input_path.string()));
-    }
-
-    // 读取文件内容
-    inline std::string read_file(const std::filesystem::path& input_path)
-    {
-        check_file_exist(input_path);
-        std::string content;
-        content.reserve(std::filesystem::file_size(input_path));
-        std::ifstream file(input_path);
-        content.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-        return content;
-    }
-
-    template<typename T>
-    struct timestamped
-    {
-        uint64_t device_timestamp;
-        int64_t  host_timestamp;
-        T        payload;
-    };
-
-    // 所有传感器缓冲区的大小限制
-    inline constexpr size_t K_BUFFER_CAPACITY = 64;
 } // namespace hsm
 
 #endif

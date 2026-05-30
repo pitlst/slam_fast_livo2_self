@@ -1,13 +1,19 @@
-#ifndef SLAM_HKCAMERA_H
-#define SLAM_HKCAMERA_H
+#ifndef HSM_HKCAMERA_H
+#define HSM_HKCAMERA_H
 
-#include <memory>
+#include <string>
+#include <sstream>
+#include <stdexcept>
+#include <chrono>
+#include <stdlib.h>
 
 #include "MvCameraControl.h"
 #include "opencv2/opencv.hpp"
 #include "readerwriterqueue.h"
 
-#include "general.hpp"
+#include "common/common.hpp"
+#include "common/struct.hpp"
+#include "common/exception.hpp"
 #include "config/config.hpp"
 
 namespace hsm
