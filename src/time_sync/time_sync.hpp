@@ -33,19 +33,8 @@ namespace hsm
             double   mad            = 0.0; // 绝对中位差
             uint64_t last_update_ns = 0;
 
-            inline static std::string to_string(const clock_model& input_data)
-            {
-                // 将纳秒时间戳拆分为 Unix 秒 + 纳秒余数，比 19 位纯数字更直观
-                const uint64_t sec  = input_data.last_update_ns / 1'000'000'000ULL;
-                const uint64_t nsec = input_data.last_update_ns % 1'000'000'000ULL;
-
-                return fmt::format(
-                    FMT_COMPILE("offset={:.6f}s, mad={}, last_update={}.{:09}"),
-                    input_data.offset_sec,
-                    input_data.mad,
-                    sec,
-                    nsec);
-            }
+            // 格式化输出，便于调试
+            static std::string to_string(const clock_model& input_data);
         };
 
         explicit time_sync(size_t windows_size, bool have_rate = false)

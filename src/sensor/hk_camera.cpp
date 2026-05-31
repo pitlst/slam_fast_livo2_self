@@ -27,9 +27,8 @@ void __stdcall _hk_camera_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* p
     }
 }
 
-std::unique_ptr<hk_camera> hsm::make_hk_camera(const std::filesystem::path& input_path)
+std::unique_ptr<hk_camera> hsm::make_hk_camera()
 {
-    auto config_data   = std::make_unique<camera_config>(input_path);
     auto hk_camera_ptr = std::make_unique<hk_camera>();
 
     MV_CC_DEVICE_INFO_LIST stDeviceList;
@@ -44,7 +43,7 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera(const std::filesystem::path& inpu
         throw_if(pDeviceInfo == NULL, fmt::format(FMT_COMPILE("找到的设备报错，对应设备号为 {}\n"), i));
     }
 
-    unsigned int nIndex = config_data->device_id;
+    unsigned int nIndex = device_id;
     nRet                = MV_CC_CreateHandle(&(hk_camera_ptr->handle), stDeviceList.pDeviceInfo[nIndex]);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_CreateHandle fail! nRet {}\n"), nRet));
     nRet = MV_CC_OpenDevice(hk_camera_ptr->handle);
@@ -56,20 +55,20 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera(const std::filesystem::path& inpu
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetX错误,错误码: {}\n"), nRet));
     nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetY", 0);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetY错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "ExposureTime", config_data->exposure);
+    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "ExposureTime", exposure);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置曝光错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Width", config_data->width);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Width", width);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置Width错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Height", config_data->height);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "Height", height);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置Height错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetX", config_data->offset_x);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetX", offset_x);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetX错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetY", config_data->offset_y);
+    nRet = MV_CC_SetIntValue(hk_camera_ptr->handle, "OffsetY", offset_y);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置OffsetY错误,错误码: {}\n"), nRet));
 
     nRet = MV_CC_SetEnumValue(hk_camera_ptr->handle, "PixelFormat", 0x01080009);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置传输图像格式错误,错误码: {}\n"), nRet));
-    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "Gain", config_data->gain);
+    nRet = MV_CC_SetFloatValue(hk_camera_ptr->handle, "Gain", gain);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("设置增益错误,错误码: {}\n"), nRet));
 
     nRet = MV_CC_RegisterImageCallBackEx(hk_camera_ptr->handle, _hk_camera_callback, nullptr);

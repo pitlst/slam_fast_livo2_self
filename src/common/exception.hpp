@@ -92,7 +92,6 @@ namespace hsm
             throw_enhanced(ExceptionType(error_message), location);
     }
 
-
 } // namespace hsm
 
 #endif

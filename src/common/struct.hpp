@@ -2,6 +2,8 @@
 #define SLAM_STRUCT_H
 
 #include "Eigen/Core"
+#include "readerwriterqueue.h"
+#include "livox_lidar_def.h"
 
 namespace hsm
 {
@@ -16,6 +18,15 @@ namespace hsm
 
     // 所有传感器缓冲区的大小限制
     inline constexpr size_t K_BUFFER_CAPACITY = 64;
+
+    // 驱动的数据别名
+    using point_data = std::vector<LivoxLidarCartesianHighRawPoint>;
+    using imu_data   = LivoxLidarImuRawPoint;
+
+    // 缓冲区的别名
+    using point_queue = moodycamel::ReaderWriterQueue<timestamped<point_data>>;
+    using imu_queue   = moodycamel::ReaderWriterQueue<timestamped<imu_data>>;
+    using frame_queue = moodycamel::ReaderWriterQueue<timestamped<cv::Mat>>;
 
     // 拟合时间偏移后的imu数据
     struct raw_imu_data

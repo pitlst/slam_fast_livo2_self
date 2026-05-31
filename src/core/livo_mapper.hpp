@@ -3,7 +3,7 @@
 
 namespace hsm
 {
-    class LIVMapper
+    struct LIVMapper
     {
     public:
 

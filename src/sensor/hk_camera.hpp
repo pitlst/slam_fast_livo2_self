@@ -14,15 +14,21 @@
 #include "common/common.hpp"
 #include "common/struct.hpp"
 #include "common/exception.hpp"
-#include "config/config.hpp"
 
 namespace hsm
 {
-    using frame_queue = moodycamel::ReaderWriterQueue<timestamped<cv::Mat>>;
+    // 相机相关的配置，直接写死在这里
+    constexpr int device_id = 0;
+    constexpr int width     = 1440;
+    constexpr int height    = 1080;
+    constexpr int offset_x  = 0;
+    constexpr int offset_y  = 0;
+    constexpr int exposure  = 5000;
+    constexpr int gain      = 0;
 
     struct hk_camera
     {
-        friend std::unique_ptr<hk_camera> make_hk_camera(const std::filesystem::path& input_path);
+        friend std::unique_ptr<hk_camera> make_hk_camera();
 
     public:
         ~hk_camera();
@@ -33,7 +39,8 @@ namespace hsm
         void* handle = nullptr;
     };
 
-    std::unique_ptr<hk_camera> make_hk_camera(const std::filesystem::path& input_path = std::filesystem::path(PROJECT_PATH) / "config" / "camera.toml");
+    // 工厂函数
+    std::unique_ptr<hk_camera> make_hk_camera();
 } // namespace hsm
 
 #endif

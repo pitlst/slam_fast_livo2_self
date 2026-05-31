@@ -23,15 +23,16 @@ namespace hsm
     inline double compute_median(const std::vector<double>& values)
     {
         throw_if(values.empty(), "计算中位数的时候输入数据为空");
-        std::sort(values.begin(), values.end());
-        size_t n = values.size();
+        std::vector<double> sorted(values.begin(), values.end());
+        std::sort(sorted.begin(), sorted.end());
+        size_t n = sorted.size();
         if (n % 2 == 1)
         {
-            return values[n / 2];
+            return sorted[n / 2];
         }
         else
         {
-            return (values[n / 2 - 1] + values[n / 2]) / 2.0;
+            return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0;
         }
     }
 
@@ -49,7 +50,7 @@ namespace hsm
         return std::sqrt(sq_sum / value.size());
     }
 
-    // 计算绝对中位差 (MAD)
+    // 计算绝对中位差 MAD
     inline std::tuple<double, double> median_absolute_deviation(const std::vector<double>& value)
     {
         throw_if(value.empty(), "计算绝对中位差的时候输入数据为空");
@@ -65,6 +66,18 @@ namespace hsm
         // 绝对偏差的中位数即为 MAD
         auto mad = compute_median(absDeviations);
         return std::make_tuple(med, mad);
+    }
+
+    // 转换雷达驱动的点位结构数据为算法需要的标准数据
+    inline raw_point_data trans_data(const point_data&)
+    {
+
+    }
+
+    // 转换雷达驱动imu结构数据为算法需要的标准数据
+    inline raw_imu_data trans_data(const imu_data&)
+    {
+        
     }
 
 } // namespace hsm

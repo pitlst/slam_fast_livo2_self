@@ -43,7 +43,7 @@ void _livox_imu_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthe
     // 雷达时间戳
     uint64_t device_ts = _parse_livox_timestamp(data->timestamp);
     // 主机时间戳
-    auto host_ts = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    auto host_ts = hsm::get_now_pc_time();
     // imu数据
     auto* raw = (LivoxLidarImuRawPoint*) data->data;
     // 加入缓冲区
@@ -62,7 +62,7 @@ std::unique_ptr<livox_lidar> hsm::make_livox_lidar(const std::filesystem::path& 
 {
     auto lidar_ptr = std::make_unique<livox_lidar>();
     auto label     = LivoxLidarSdkInit(input_path.c_str());
-    throw_if(!label, fmt::format(FMT_COMPILE("LivoxLidarSdkInit fail!,激光雷达初始化失败\n")));
+    throw_if(! label, fmt::format(FMT_COMPILE("LivoxLidarSdkInit fail!,激光雷达初始化失败\n")));
 
     SetLivoxLidarPointCloudCallBack(_livox_point_callback, nullptr);
     SetLivoxLidarImuDataCallback(_livox_imu_callback, nullptr);

@@ -2,6 +2,20 @@
 
 using namespace hsm;
 
+static std::string to_string(const time_sync::clock_model& input_data)
+{
+    // 将纳秒时间戳拆分为 Unix 秒 + 纳秒余数，比 19 位纯数字更直观
+    const uint64_t sec  = input_data.last_update_ns / 1'000'000'000ULL;
+    const uint64_t nsec = input_data.last_update_ns % 1'000'000'000ULL;
+
+    return fmt::format(
+        FMT_COMPILE("offset={:.6f}s, mad={}, last_update={}.{:09}"),
+        input_data.offset_sec,
+        input_data.mad,
+        sec,
+        nsec);
+}
+
 double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
 {
     // 添加新的数据并维护对应的结果
@@ -49,5 +63,6 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     this->status.offset_sec     = std::accumulate(mean_data_.begin(), mean_data_.end(), 0.0) / mean_data_.size();
     this->status.mad            = mad;
     this->status.last_update_ns = host_timestamp;
-    return this->status.offset_sec;
+    // 返回之后的预测值
+    return this->status.offset_sec + device_timestamp;
 }

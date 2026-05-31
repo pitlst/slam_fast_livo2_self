@@ -51,8 +51,6 @@ add_executable(
     src/common/common.hpp
     src/common/exception.hpp
     src/common/struct.hpp
-    src/config/config.hpp
-    src/config/config.cpp
     src/time_sync/time_sync.hpp
     src/time_sync/time_sync.cpp
     src/sensor/hk_camera.hpp
