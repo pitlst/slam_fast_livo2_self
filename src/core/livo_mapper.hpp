@@ -1,31 +1,56 @@
 #ifndef HSM_CORE_LIVMAPPER_H
 #define HSM_CORE_LIVMAPPER_H
 
+#include <deque>
+
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
 
 #include "common/struct.hpp"
+#include "sensor/hk_camera.hpp"
+#include "sensor/mid360_lidar.hpp"
+#include "time_sync/time_sync.hpp"
+#include "core/imu_process.hpp"
+#include "core/point_prerpocess.hpp"
 namespace hsm
 {
     struct livo_mapper
     {
     public:
-        livo_mapper();
+        // 相机和激光雷达的初始化外置
+        explicit livo_mapper(std::shared_ptr<hk_camera> camera, std::shared_ptr<livox_lidar> lidar);
 
         // 循环入口
         void run();
+
         // 同步驱动数据
         bool sync_packages();
+        // 从 SPSC 队列拉数据到内部 deque 缓冲区
+        void drain_sensor_queues();
 
     public:
-        lidar_measure_group lidar_measures;
+        // 缓冲队列
+        std::deque<process_timestamped<imu_data>>                              lidar_imu_buffer;
+        std::deque<process_timestamped<pcl::PointCloud<pcl::PointXYZINormal>>> lidar_point_buffer;
+        std::deque<process_timestamped<cv::Mat>>                               frame_buffer;
 
-    private:
-        // 根据首帧计算时间零点
-        void handle_first_frame();
+        bool lidar_pushed = false;
 
-    private:
-        double _first_lidar_time = 0.0;
+        // 核心状态
+        
+        std::shared_ptr<lidar_measure_group> lidar_measures;
+
+        // 相关的处理类
+
+        std::shared_ptr<imu_process>      p_imu;
+        std::shared_ptr<point_prerpocess> p_point;
+
+        std::shared_ptr<time_sync> image_sync;
+        std::shared_ptr<time_sync> point_sync;
+        std::shared_ptr<time_sync> imu_sync;
+
+        std::shared_ptr<hk_camera>   camera;
+        std::shared_ptr<livox_lidar> lidar;
     };
 } // namespace hsm
 

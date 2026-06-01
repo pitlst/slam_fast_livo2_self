@@ -10,8 +10,7 @@ namespace hsm
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         
-        imu_process()  = default;
-        ~imu_process() = default;
+        imu_process();
 
         void process();
 

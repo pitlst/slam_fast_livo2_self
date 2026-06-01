@@ -1,4 +1,0 @@
-# 计算标准差的数据集窗口，超过这个大小的时间数据丢弃
-cameara_median_MAD_windows_size = 500
-point_median_MAD_windows_size = 500
-imu_median_MAD_windows_size = 500

@@ -14,7 +14,15 @@ namespace hsm
     {
         uint64_t device_timestamp;
         uint64_t host_timestamp;
-        T        payload;
+        T        value;
+    };
+
+    // 携带有处理后的全局时间点的传感器数据
+    template<typename T>
+    struct process_timestamped
+    {
+        double timestamp;
+        T      value;
     };
 
     // 所有传感器缓冲区的大小限制
@@ -38,27 +46,8 @@ namespace hsm
     // 拟合时间偏移后的imu数据
     struct raw_imu_data
     {
-        double          timestamp = 0.0;
-        Eigen::Vector3d gyro      = Eigen::Vector3d::Zero(); // 角速度 (rad/s)
-        Eigen::Vector3d accel     = Eigen::Vector3d::Zero(); // 加速度 (m/s^2)
-    };
-
-    // 拟合时间偏移后的激光雷达单线点云格式
-    struct raw_point_data
-    {
-        double   x         = 0.0;
-        double   y         = 0.0;
-        double   z         = 0.0;
-        double   intensity = 0.0;
-        double   timestamp = 0.0;
-        uint16_t ring;
-    };
-
-    // 拟合时间偏移之后的图像输出
-    struct frame_data
-    {
-        cv::Mat image;
-        double  timestamp = 0.0;
+        Eigen::Vector3d gyro  = Eigen::Vector3d::Zero(); // 角速度 (rad/s)
+        Eigen::Vector3d accel = Eigen::Vector3d::Zero(); // 加速度 (m/s^2)
     };
 
     // 位资输出

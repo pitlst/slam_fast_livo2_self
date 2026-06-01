@@ -22,7 +22,7 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     timestamped<double> input_res;
     input_res.device_timestamp = device_timestamp;
     input_res.host_timestamp   = host_timestamp;
-    input_res.payload          = host_timestamp - device_timestamp;
+    input_res.value            = host_timestamp - device_timestamp;
     this->time_buffer.emplace_front(input_res);
     if (this->time_buffer.size() > windows_size)
     {
@@ -33,7 +33,7 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     prepare_data.reserve(this->time_buffer.size());
     for (const auto& ch : this->time_buffer)
     {
-        prepare_data.emplace_back(ch.payload);
+        prepare_data.emplace_back(ch.value);
     }
     // 获取当前中位数,绝对中位差
     auto [med, mad] = median_absolute_deviation(prepare_data);
@@ -43,9 +43,9 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     {
         for (const auto& ch : this->time_buffer)
         {
-            if (std::abs(ch.payload - med) <= 0.001)
+            if (std::abs(ch.value - med) <= 0.001)
             {
-                mean_data_.emplace_back(ch.payload);
+                mean_data_.emplace_back(ch.value);
             }
         }
     }
@@ -53,12 +53,12 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     {
         for (const auto& ch : this->time_buffer)
         {
-            if (std::abs(ch.payload - med) <= 3 * mad)
+            if (std::abs(ch.value - med) <= 3 * mad)
             {
-                mean_data_.emplace_back(ch.payload);
+                mean_data_.emplace_back(ch.value);
             }
         }
-    }    
+    }
     // 更新当前状态
     this->status.offset_sec     = std::accumulate(mean_data_.begin(), mean_data_.end(), 0.0) / mean_data_.size();
     this->status.mad            = mad;
