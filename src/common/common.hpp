@@ -7,8 +7,9 @@
 #include <numeric>
 #include <tuple>
 
+#include "opencv2/opencv.hpp"
 #include "common/struct.hpp"
-#include "common/exception.hpp"
+#include "common/enhanced_exception.hpp"
 
 namespace hsm
 {
@@ -69,16 +70,18 @@ namespace hsm
     }
 
     // 转换雷达驱动的点位结构数据为算法需要的标准数据
-    inline raw_point_data trans_data(const point_data&)
-    {
+    // inline raw_point_data trans_data(const LivoxLidarCartesianHighRawPoint& value, double _timestamp)
+    // {
+    //     raw_point_data res;
+    //     res.x = value.x;
 
-    }
+    // }
 
     // 转换雷达驱动imu结构数据为算法需要的标准数据
-    inline raw_imu_data trans_data(const imu_data&)
-    {
+    // inline raw_imu_data trans_data(const imu_data& value)
+    // {
         
-    }
+    // }
 
 } // namespace hsm
 

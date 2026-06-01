@@ -15,7 +15,6 @@
 #include "fmt/compile.h"
 
 #include "common/common.hpp"
-
 #include "common/struct.hpp"
 
 namespace hsm

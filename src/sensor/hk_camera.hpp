@@ -13,7 +13,7 @@
 
 #include "common/common.hpp"
 #include "common/struct.hpp"
-#include "common/exception.hpp"
+#include "common/enhanced_exception.hpp"
 
 namespace hsm
 {

@@ -2,9 +2,10 @@
 #   项目总体设置
 #--------------------------------------------------------------------------------------#
 cmake_minimum_required(VERSION 3.12)
-if(POLICY CMP0146)
-    cmake_policy(SET CMP0146 OLD) # 允许使用旧的 FindCUDA
-endif()
+# cmake_policy(SET CMP0144 NEW)
+# if(POLICY CMP0146)
+#     cmake_policy(SET CMP0146 OLD) # 允许使用旧的 FindCUDA
+# endif()
 # 设置项目名称
 set(PROJECT_NAME slam_fast_livo2_self)
 # 在这里直接指定项目为c++项目，节约查找tool chain的时间
@@ -39,6 +40,7 @@ find_package(rerun_sdk REQUIRED)
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
 find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(PCL REQUIRED)
 
 #--------------------------------------------------------------------------------------#
 #   项目编译设置
@@ -49,7 +51,7 @@ add_executable(
     ${PROJECT_NAME}
     src/main.cpp
     src/common/common.hpp
-    src/common/exception.hpp
+    src/common/enhanced_exception.hpp
     src/common/struct.hpp
     src/time_sync/time_sync.hpp
     src/time_sync/time_sync.cpp
@@ -57,7 +59,12 @@ add_executable(
     src/sensor/hk_camera.cpp
     src/sensor/mid360_lidar.hpp
     src/sensor/mid360_lidar.cpp
-
+    src/core/livo_mapper.hpp
+    src/core/livo_mapper.cpp
+    src/core/point_prerpocess.hpp
+    src/core/point_prerpocess.cpp
+    src/core/imu_preprocess.hpp
+    src/core/imu_preprocess.cpp
 )
 target_include_directories(
     ${PROJECT_NAME} PRIVATE
@@ -80,6 +87,10 @@ target_link_libraries(
     fmt::fmt
     Eigen3::Eigen
     rerun_sdk
+    pcl_common
+    pcl_io
+    pcl_filters
+    pcl_visualization
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
     ${HIK_LIBS})

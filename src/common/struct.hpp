@@ -1,6 +1,7 @@
 #ifndef SLAM_STRUCT_H
 #define SLAM_STRUCT_H
 
+#include "opencv2/opencv.hpp"
 #include "Eigen/Core"
 #include "readerwriterqueue.h"
 #include "livox_lidar_def.h"
@@ -45,6 +46,13 @@ namespace hsm
         double   intensity;
         double   timestamp;
         uint16_t ring;
+    };
+
+    // 拟合时间偏移之后的图像输出
+    struct frame_data
+    {
+        cv::Mat image;
+        double  timestamp;
     };
 
     // 位资输出
