@@ -27,8 +27,12 @@ void _livox_point_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEt
     // 主机时间戳
     uint64_t host_ts = hsm::get_now_pc_time();
     // 雷达数据
-    auto*      raw = (LivoxLidarCartesianHighRawPoint*) data->data;
-    point_data buf(raw, raw + data->dot_num);
+    auto* raw = (LivoxLidarCartesianHighRawPoint*) data->data;
+
+    point_data buf;
+    buf.dot_num       = data->dot_num;
+    buf.time_interval = data->time_interval;
+    buf.points.assign(raw, raw + data->dot_num);
     // 加入缓冲区
     timestamped<point_data> item {device_ts, host_ts, std::move(buf)};
     _point_queue.try_enqueue(std::move(item));
@@ -78,22 +82,12 @@ livox_lidar::~livox_lidar()
     fmt::print("[Livox] 成功关闭\n");
 }
 
-timestamped<point_data> livox_lidar::get_points()
+bool livox_lidar::get_points(timestamped<point_data>& out)
 {
-    timestamped<point_data> item;
-    if (_point_queue.try_dequeue(item))
-    {
-        return std::move(item);
-    }
-    return {};
+    return _point_queue.try_dequeue(out);
 }
 
-timestamped<imu_data> livox_lidar::get_imu()
+bool livox_lidar::get_imu(timestamped<imu_data>& out)
 {
-    timestamped<imu_data> item;
-    if (_imu_queue.try_dequeue(item))
-    {
-        return std::move(item);
-    }
-    return {};
+    return _imu_queue.try_dequeue(out);
 }

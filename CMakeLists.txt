@@ -63,8 +63,10 @@ add_executable(
     src/core/livo_mapper.cpp
     src/core/point_prerpocess.hpp
     src/core/point_prerpocess.cpp
-    src/core/imu_preprocess.hpp
-    src/core/imu_preprocess.cpp
+    src/core/imu_process.hpp
+    src/core/imu_process.cpp
+    src/core/vio_process.hpp
+    src/core/vio_process.cpp
 )
 target_include_directories(
     ${PROJECT_NAME} PRIVATE

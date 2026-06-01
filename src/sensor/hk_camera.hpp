@@ -33,7 +33,7 @@ namespace hsm
     public:
         ~hk_camera();
 
-        timestamped<cv::Mat> get();
+        bool get(timestamped<cv::Mat>& out);
 
     private:
         void* handle = nullptr;

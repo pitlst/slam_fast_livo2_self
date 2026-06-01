@@ -114,12 +114,7 @@ hk_camera::~hk_camera()
     fmt::print("[hik camera] 成功关闭\n");
 }
 
-timestamped<cv::Mat> hk_camera::get()
+bool hk_camera::get(timestamped<cv::Mat>& out)
 {
-    timestamped<cv::Mat> item;
-    if (_camera_queue.try_dequeue(item))
-    {
-        return std::move(item);
-    }
-    return {};
+    return _camera_queue.try_dequeue(out);
 }
