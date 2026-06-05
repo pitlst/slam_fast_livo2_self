@@ -1,12 +1,12 @@
-#include "core/point_prerpocess.hpp"
+#include "core/point_preprocess.hpp"
 
 using namespace hsm;
 
-point_prerpocess::point_prerpocess(double blind)
+point_preprocess::point_preprocess(double blind)
     : blind_sqr(blind * blind)
 {}
 
-void point_prerpocess::process(
+void point_preprocess::process(
     const process_timestamped<point_data>& raw_points,
     pcl::PointCloud<pcl::PointXYZINormal>& out)
 {

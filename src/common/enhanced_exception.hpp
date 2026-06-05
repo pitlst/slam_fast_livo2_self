@@ -1,5 +1,5 @@
-#ifndef SLAM_GENERAL_H
-#define SLAM_GENERAL_H
+#ifndef HSM_GENERAL_H
+#define HSM_GENERAL_H
 
 #include <cstddef>
 #include <cstdint>

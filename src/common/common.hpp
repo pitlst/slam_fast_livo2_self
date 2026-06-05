@@ -1,5 +1,5 @@
-#ifndef SLAM_COMMON_H
-#define SLAM_COMMON_H
+#ifndef HSM_COMMON_H
+#define HSM_COMMON_H
 
 #include <chrono>
 #include <cstdint>

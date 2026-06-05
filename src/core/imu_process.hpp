@@ -1,22 +1,27 @@
 #ifndef HSM_CORE_IMU_PROCESS_H
 #define HSM_CORE_IMU_PROCESS_H
 
+#include <memory>
+
 #include "Eigen/Eigen"
 
+#include "common/struct.hpp"
 namespace hsm
 {
     struct imu_process
     {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        
-        imu_process();
+
+        imu_process(std::shared_ptr<lidar_measure_group> lidar_measures, std::shared_ptr<states_group> states);
 
         void process();
 
-    private:
-        double imu_mean_acc_norm;
+    public:
+        std::shared_ptr<lidar_measure_group> lidar_measures;
+        std::shared_ptr<states_group>        states;
 
+        double imu_mean_acc_norm;
         double cov_inv_expo;
 
         Eigen::Vector3d cov_acc;

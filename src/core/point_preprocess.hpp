@@ -8,14 +8,14 @@
 
 namespace hsm
 {
-    struct point_prerpocess
+    struct point_preprocess
     {
     public:
-        point_prerpocess(double blind = 0.01);
+        point_preprocess(double blind = 0.01);
 
         void process(const process_timestamped<point_data>& raw_points, pcl::PointCloud<pcl::PointXYZINormal>& out);
 
-    private:
+    public:
         // 盲区阈值，距离雷达原点小于 blind 米的点（如外壳反射、近处干扰）直接丢弃
         double blind_sqr;
     };

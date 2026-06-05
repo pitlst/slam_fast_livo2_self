@@ -7,17 +7,17 @@
 
 using namespace hsm;
 
-livo_mapper::livo_mapper(std::shared_ptr<hk_camera> camera, std::shared_ptr<livox_lidar> lidar)
-    : camera(camera), lidar(lidar)
+livo_mapper::livo_mapper(std::unique_ptr<hk_camera> camera, std::unique_ptr<livox_lidar> lidar)
+    : camera(std::move(camera)), lidar(std::move(lidar))
 {
     this->lidar_measures = std::make_shared<lidar_measure_group>();
 
-    this->p_imu   = std::make_shared<imu_process>();
-    this->p_point = std::make_shared<point_prerpocess>();
+    this->p_imu   = std::make_unique<imu_process>();
+    this->p_point = std::make_unique<point_preprocess>();
 
-    this->image_sync = std::make_shared<time_sync>();
-    this->point_sync = std::make_shared<time_sync>();
-    this->imu_sync   = std::make_shared<time_sync>();
+    this->image_sync = std::make_unique<time_sync>();
+    this->point_sync = std::make_unique<time_sync>();
+    this->imu_sync   = std::make_unique<time_sync>();
 }
 
 void livo_mapper::run()
@@ -38,9 +38,18 @@ void livo_mapper::run()
 bool livo_mapper::sync_packages()
 {
     // --- 基本检查：三个传感器都必须有数据 ---
-    if (this->lidar_imu_buffer.empty()) return false;
-    if (this->lidar_point_buffer.empty()) return false;
-    if (this->frame_buffer.empty()) return false;
+    if (this->lidar_imu_buffer.empty())
+    {
+        return false;
+    }
+    if (this->lidar_point_buffer.empty())
+    {
+        return false;
+    }
+    if (this->frame_buffer.empty())
+    {
+        return false;
+    }
 
     EKF_STATE last_flg = this->lidar_measures->lio_vio_flg;
 
@@ -50,32 +59,32 @@ bool livo_mapper::sync_packages()
         case EKF_STATE::WAIT:
         case EKF_STATE::VIO:
         {
-            // 1. 取图像捕获时间（曝光时间补偿暂设为0）
+            // 取图像捕获时间（曝光时间补偿暂设为0）
             double img_capture_time = this->frame_buffer.front().timestamp;
-            // 2. 首次初始化 last_lio_update_time
+            // 首次初始化 last_lio_update_time
             if (this->lidar_measures->last_lio_update_time < 0.0)
             {
                 this->lidar_measures->last_lio_update_time = this->lidar_point_buffer.front().timestamp;
             }
-            // 3. 获取当前最新 LiDAR 和 IMU 时间
+            // 获取当前最新 LiDAR 和 IMU 时间
             // Mid-360 每包约含 ~100 个点，最后一点的时间戳就是包的结束时间
             // 实际上 = 包首点时间 + 包内时间跨度
-            double lid_newest_time = this->lidar_point_buffer.back().timestamp + this->lidar_point_buffer.back().value.points.back().curvature - this->lidar_point_buffer.back().timestamp; 
+            double lid_newest_time = this->lidar_point_buffer.back().timestamp + this->lidar_point_buffer.back().value.points.back().curvature - this->lidar_point_buffer.back().timestamp;
             // 简化：包最后一点 = lidar_raw_buffer.back().points.back().timestamp
             double imu_newest_time = this->frame_buffer.back().timestamp;
 
-            // 4. 丢弃过期图像（早于上次处理的）
+            // 丢弃过期图像（早于上次处理的）
             if (img_capture_time < this->lidar_measures->last_lio_update_time + 1e-6)
             {
                 this->frame_buffer.pop_front();
                 return false;
             }
-            // 5. 等待数据追上图像时间
+            // 等待数据追上图像时间
             if (img_capture_time > lid_newest_time || img_capture_time > imu_newest_time)
             {
                 return false;
             }
-            // 6. 创建 MeasureGroup，收集 IMU
+            // 创建 MeasureGroup，收集 IMU
             measure_group m;
             m.lio_time = img_capture_time;
             while (! this->lidar_imu_buffer.empty())
@@ -83,27 +92,27 @@ bool livo_mapper::sync_packages()
                 if (this->lidar_imu_buffer.front().timestamp > m.lio_time)
                 {
                     break;
-                } 
+                }
                 // 只保留 last_lio_update_time 之后的新 IMU
                 if (this->lidar_imu_buffer.front().timestamp > this->lidar_measures->last_lio_update_time)
-                {   
+                {
                     m.imu.emplace_back(this->lidar_imu_buffer.front());
                 }
                 this->lidar_imu_buffer.pop_front();
             }
 
-            // 7. 搬运上一轮留下的 next → cur
+            // 搬运上一轮留下的 next → cur
             *(this->lidar_measures->pcl_proc_cur) = *(this->lidar_measures->pcl_proc_next);
             this->lidar_measures->pcl_proc_next->clear();
 
-            // 8. 累积并切分 LiDAR 点云
+            // 累积并切分 LiDAR 点云
             while (! this->lidar_point_buffer.empty())
             {
                 // 如果这个包的起始时间已经超过图像时刻，留着下次处理
                 if (this->lidar_point_buffer.front().timestamp > img_capture_time)
                 {
                     break;
-                } 
+                }
                 auto& pcl = this->lidar_point_buffer.front().value.points;
 
                 for (size_t i = 0; i < pcl.size(); i++)
@@ -123,14 +132,12 @@ bool livo_mapper::sync_packages()
                 this->lidar_point_buffer.pop_front();
             }
 
-            // 9. 设置状态为 LIO
+            // 设置状态为 LIO
             this->lidar_measures->measures.emplace_back(m);
             this->lidar_measures->lio_vio_flg = EKF_STATE::LIO;
             return true;
         }
-        // ================================================================
         // 状态 LIO：准备 VIO 数据
-        // ================================================================
         case EKF_STATE::LIO:
         {
             double img_capture_time = this->frame_buffer.front().timestamp;
@@ -146,10 +153,9 @@ bool livo_mapper::sync_packages()
 
             this->lidar_measures->measures.emplace_back(m);
             // 允许新一轮 LiDAR 累积
-            this->lidar_pushed = false; 
+            this->lidar_pushed = false;
             return true;
         }
-
         default:
             return false;
     }
@@ -199,7 +205,7 @@ void livo_mapper::drain_sensor_queues()
     timestamped<cv::Mat> img_item;
     while (camera->get(img_item))
     {
-        if(img_item.value.empty())
+        if (img_item.value.empty())
         {
             break;
         }

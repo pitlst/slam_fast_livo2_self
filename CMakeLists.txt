@@ -53,6 +53,7 @@ add_executable(
     src/common/common.hpp
     src/common/enhanced_exception.hpp
     src/common/struct.hpp
+    src/common/so3_math.hpp
     src/time_sync/time_sync.hpp
     src/time_sync/time_sync.cpp
     src/sensor/hk_camera.hpp
@@ -61,12 +62,14 @@ add_executable(
     src/sensor/mid360_lidar.cpp
     src/core/livo_mapper.hpp
     src/core/livo_mapper.cpp
-    src/core/point_prerpocess.hpp
-    src/core/point_prerpocess.cpp
+    src/core/point_preprocess.hpp
+    src/core/point_preprocess.cpp
     src/core/imu_process.hpp
     src/core/imu_process.cpp
     src/core/vio_process.hpp
     src/core/vio_process.cpp
+    src/core/voxel_mapper.hpp
+    src/core/voxel_mapper.cpp
 )
 target_include_directories(
     ${PROJECT_NAME} PRIVATE
@@ -76,6 +79,7 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/libs/toml++
     ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
+    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
 )
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE

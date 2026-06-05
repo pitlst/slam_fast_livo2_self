@@ -11,14 +11,14 @@
 #include "sensor/mid360_lidar.hpp"
 #include "time_sync/time_sync.hpp"
 #include "core/imu_process.hpp"
-#include "core/point_prerpocess.hpp"
+#include "core/point_preprocess.hpp"
 namespace hsm
 {
     struct livo_mapper
     {
     public:
         // 相机和激光雷达的初始化外置
-        explicit livo_mapper(std::shared_ptr<hk_camera> camera, std::shared_ptr<livox_lidar> lidar);
+        explicit livo_mapper(std::unique_ptr<hk_camera> camera, std::unique_ptr<livox_lidar> lidar);
 
         // 循环入口
         void run();
@@ -37,20 +37,21 @@ namespace hsm
         bool lidar_pushed = false;
 
         // 核心状态
-        
+
         std::shared_ptr<lidar_measure_group> lidar_measures;
+        std::shared_ptr<states_group>        states;
 
         // 相关的处理类
 
-        std::shared_ptr<imu_process>      p_imu;
-        std::shared_ptr<point_prerpocess> p_point;
+        std::unique_ptr<imu_process>      p_imu;
+        std::unique_ptr<point_preprocess> p_point;
 
-        std::shared_ptr<time_sync> image_sync;
-        std::shared_ptr<time_sync> point_sync;
-        std::shared_ptr<time_sync> imu_sync;
+        std::unique_ptr<time_sync> image_sync;
+        std::unique_ptr<time_sync> point_sync;
+        std::unique_ptr<time_sync> imu_sync;
 
-        std::shared_ptr<hk_camera>   camera;
-        std::shared_ptr<livox_lidar> lidar;
+        std::unique_ptr<hk_camera>   camera;
+        std::unique_ptr<livox_lidar> lidar;
     };
 } // namespace hsm
 
