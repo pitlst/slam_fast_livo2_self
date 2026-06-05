@@ -11,8 +11,6 @@ namespace hsm
     struct imu_process
     {
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
         imu_process(std::shared_ptr<lidar_measure_group> lidar_measures, std::shared_ptr<states_group> states);
 
         void process();
