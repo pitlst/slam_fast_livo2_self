@@ -37,12 +37,12 @@ int main()
             color_buf.clear();
             for (;;)
             {
-                auto item = lidar->get_points();
-                if (item.payload.empty()) break;
+                hsm::timestamped<hsm::point_data> item;
+                if (!lidar->get_points(item)) break;
 
                 fmt::print(FMT_COMPILE("[lidar] {} {}\n"), item.device_timestamp, item.host_timestamp);
 
-                for (auto& raw : item.payload)
+                for (auto& raw : item.value.points)
                 {
                     Eigen::Vector3d pt(
                         static_cast<double>(raw.x) / 1000.0,
@@ -79,11 +79,11 @@ int main()
                 rec.log("lidar/points", rerun::Points3D(positions).with_colors(colors));
             }
 
-            auto frame_item = camera->get();
-            if (! frame_item.payload.empty())
+            hsm::timestamped<cv::Mat> frame_item;
+            if (camera->get(frame_item))
             {
                 fmt::print(FMT_COMPILE("[camera] {} {}\n"), frame_item.device_timestamp, frame_item.host_timestamp);
-                cv::imshow("Camera", frame_item.payload);
+                cv::imshow("Camera", frame_item.value);
             }
 
             ++frame_idx;

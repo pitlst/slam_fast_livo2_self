@@ -29,12 +29,12 @@ file(GLOB HIK_LIBS "/opt/MVS/lib/64/*.so")
 file(GLOB HIK_INCLUDE "/opt/MVS/include/*.h")
 include_directories(/opt/MVS/include)
 # 找到livox sdk
-set(LIVOX_SDK /mnt/data/Livox-SDK2)
+set(LIVOX_SDK ${PROJECT_SOURCE_DIR}/../Livox-SDK2)
 # 找到opencv
-set(OpenCV_DIR /mnt/data/opencv/build)
+set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/../opencv/build)
 find_package(OpenCV REQUIRED)
 # 找到rerun，用于点云可视化
-set(rerun_sdk_DIR /mnt/data/rerun_sdk_install/lib/cmake/rerun_sdk)
+set(rerun_sdk_DIR ${PROJECT_SOURCE_DIR}/../rerun_sdk_install/lib/cmake/rerun_sdk)
 find_package(rerun_sdk REQUIRED)
 # 其他的库
 find_package(fmt REQUIRED)
@@ -83,6 +83,49 @@ target_include_directories(
 )
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE
+    pthread
+    absl::strings
+    absl::str_format
+    absl::numeric
+    absl::int128
+    absl::base
+    absl::utility
+    fmt::fmt
+    Eigen3::Eigen
+    rerun_sdk
+    pcl_common
+    pcl_io
+    pcl_filters
+    pcl_visualization
+    ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
+    ${OpenCV_LIBS}
+    ${HIK_LIBS})
+
+
+
+add_executable(
+    ${PROJECT_NAME}_test
+    src/main.cpp
+    src/common/common.hpp
+    src/common/enhanced_exception.hpp
+    src/common/struct.hpp
+    src/sensor/hk_camera.hpp
+    src/sensor/hk_camera.cpp
+    src/sensor/mid360_lidar.hpp
+    src/sensor/mid360_lidar.cpp
+)
+target_include_directories(
+    ${PROJECT_NAME}_test PRIVATE
+    /opt/MVS/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${LIVOX_SDK}/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/libs/toml++
+    ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
+    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
+)
+target_link_libraries(
+    ${PROJECT_NAME}_test PRIVATE
     pthread
     absl::strings
     absl::str_format
