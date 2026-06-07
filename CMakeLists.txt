@@ -2,10 +2,6 @@
 #   项目总体设置
 #--------------------------------------------------------------------------------------#
 cmake_minimum_required(VERSION 3.12)
-# cmake_policy(SET CMP0144 NEW)
-# if(POLICY CMP0146)
-#     cmake_policy(SET CMP0146 OLD) # 允许使用旧的 FindCUDA
-# endif()
 # 设置项目名称
 set(PROJECT_NAME slam_fast_livo2_self)
 # 在这里直接指定项目为c++项目，节约查找tool chain的时间
@@ -83,49 +79,6 @@ target_include_directories(
 )
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE
-    pthread
-    absl::strings
-    absl::str_format
-    absl::numeric
-    absl::int128
-    absl::base
-    absl::utility
-    fmt::fmt
-    Eigen3::Eigen
-    rerun_sdk
-    pcl_common
-    pcl_io
-    pcl_filters
-    pcl_visualization
-    ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
-    ${OpenCV_LIBS}
-    ${HIK_LIBS})
-
-
-
-add_executable(
-    ${PROJECT_NAME}_test
-    src/main.cpp
-    src/common/common.hpp
-    src/common/enhanced_exception.hpp
-    src/common/struct.hpp
-    src/sensor/hk_camera.hpp
-    src/sensor/hk_camera.cpp
-    src/sensor/mid360_lidar.hpp
-    src/sensor/mid360_lidar.cpp
-)
-target_include_directories(
-    ${PROJECT_NAME}_test PRIVATE
-    /opt/MVS/include
-    ${OpenCV_INCLUDE_DIRS}
-    ${LIVOX_SDK}/include
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/libs/toml++
-    ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
-    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
-)
-target_link_libraries(
-    ${PROJECT_NAME}_test PRIVATE
     pthread
     absl::strings
     absl::str_format

@@ -69,20 +69,6 @@ namespace hsm
         return std::make_tuple(med, mad);
     }
 
-    // 转换雷达驱动的点位结构数据为算法需要的标准数据
-    // inline raw_point_data trans_data(const LivoxLidarCartesianHighRawPoint& value, double _timestamp)
-    // {
-    //     raw_point_data res;
-    //     res.x = value.x;
-
-    // }
-
-    // 转换雷达驱动imu结构数据为算法需要的标准数据
-    // inline raw_imu_data trans_data(const imu_data& value)
-    // {
-        
-    // }
-
 } // namespace hsm
 
 #endif

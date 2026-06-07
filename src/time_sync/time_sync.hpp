@@ -36,8 +36,7 @@ namespace hsm
             static std::string to_string(const clock_model& input_data);
         };
 
-        explicit time_sync(size_t windows_size, bool have_rate = false)
-            : windows_size(windows_size), have_rate(have_rate) {}
+        time_sync(size_t windows_size): windows_size(windows_size) {}
 
         // 更新对应的时间序列，用于获取偏差
         double update(uint64_t device_timestamp, uint64_t host_timestamp);
@@ -50,8 +49,6 @@ namespace hsm
     private:
         // 时间窗口大小限制
         const size_t windows_size;
-        // 是否计算对应的比例，因为计算量较大
-        const bool have_rate;
         // 当前所有的时间数据
         std::deque<timestamped<double>> time_buffer;
         // 时间同步器的状态

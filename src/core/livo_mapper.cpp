@@ -11,13 +11,14 @@ livo_mapper::livo_mapper(std::unique_ptr<hk_camera> camera, std::unique_ptr<livo
     : camera(std::move(camera)), lidar(std::move(lidar))
 {
     this->lidar_measures = std::make_shared<lidar_measure_group>();
+    this->states = std::make_shared<states_group>();
 
-    this->p_imu   = std::make_unique<imu_process>();
+    this->p_imu   = std::make_unique<imu_process>(this->lidar_measures, this->states);
     this->p_point = std::make_unique<point_preprocess>();
 
-    this->image_sync = std::make_unique<time_sync>();
-    this->point_sync = std::make_unique<time_sync>();
-    this->imu_sync   = std::make_unique<time_sync>();
+    this->image_sync = std::make_unique<time_sync>(100);
+    this->point_sync = std::make_unique<time_sync>(100);
+    this->imu_sync   = std::make_unique<time_sync>(100);
 }
 
 void livo_mapper::run()

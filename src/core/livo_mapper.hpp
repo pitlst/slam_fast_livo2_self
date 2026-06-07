@@ -12,6 +12,7 @@
 #include "time_sync/time_sync.hpp"
 #include "core/imu_process.hpp"
 #include "core/point_preprocess.hpp"
+#include "core/vio_process.hpp"
 namespace hsm
 {
     struct livo_mapper
@@ -45,6 +46,7 @@ namespace hsm
 
         std::unique_ptr<imu_process>      p_imu;
         std::unique_ptr<point_preprocess> p_point;
+        std::unique_ptr<vio_process> p_vio;
 
         std::unique_ptr<time_sync> image_sync;
         std::unique_ptr<time_sync> point_sync;
