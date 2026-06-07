@@ -29,9 +29,6 @@ set(LIVOX_SDK ${PROJECT_SOURCE_DIR}/../Livox-SDK2)
 # 找到opencv
 set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/../opencv/build)
 find_package(OpenCV REQUIRED)
-# 找到rerun，用于点云可视化
-set(rerun_sdk_DIR ${PROJECT_SOURCE_DIR}/../rerun_sdk_install/lib/cmake/rerun_sdk)
-find_package(rerun_sdk REQUIRED)
 # 其他的库
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
