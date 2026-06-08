@@ -92,4 +92,57 @@ target_link_libraries(
     pcl_visualization
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
-    ${HIK_LIBS})
+    ${HIK_LIBS}
+)
+
+add_executable(
+    ${PROJECT_NAME}_simulation
+    src/simulation.cpp
+    src/common/common.hpp
+    src/common/enhanced_exception.hpp
+    src/common/struct.hpp
+    src/common/so3_math.hpp
+    src/time_sync/time_sync.hpp
+    src/time_sync/time_sync.cpp
+    src/sensor/hk_camera.hpp
+    src/sensor/hk_camera.cpp
+    src/sensor/mid360_lidar.hpp
+    src/sensor/mid360_lidar.cpp
+    src/core/livo_mapper.hpp
+    src/core/livo_mapper.cpp
+    src/core/point_preprocess.hpp
+    src/core/point_preprocess.cpp
+    src/core/imu_process.hpp
+    src/core/imu_process.cpp
+    src/core/vio_process.hpp
+    src/core/vio_process.cpp
+    src/core/voxel_mapper.hpp
+    src/core/voxel_mapper.cpp
+)
+target_include_directories(
+    ${PROJECT_NAME}_simulation PRIVATE
+    /opt/MVS/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/libs/toml++
+    ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
+    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
+)
+target_link_libraries(
+    ${PROJECT_NAME}_simulation PRIVATE
+    pthread
+    absl::strings
+    absl::str_format
+    absl::numeric
+    absl::int128
+    absl::base
+    absl::utility
+    fmt::fmt
+    Eigen3::Eigen
+    rerun_sdk
+    pcl_common
+    pcl_io
+    pcl_filters
+    pcl_visualization
+    ${OpenCV_LIBS}
+)
