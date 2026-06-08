@@ -4,8 +4,11 @@
 #include <memory>
 
 #include "Eigen/Eigen"
+#include "pcl/point_cloud.h"
+#include "pcl/point_types.h"
 
 #include "common/struct.hpp"
+
 namespace hsm
 {
     struct imu_process
@@ -13,11 +16,15 @@ namespace hsm
     public:
         imu_process(std::shared_ptr<lidar_measure_group> lidar_measures, std::shared_ptr<states_group> states);
 
-        void process();
+        std::shared_ptr<pcl::PointCloud<pcl::PointXYZINormal>> process();
 
     public:
+        // 共享状态
         std::shared_ptr<lidar_measure_group> lidar_measures;
         std::shared_ptr<states_group>        states;
+
+        // 处理结果
+        std::shared_ptr<pcl::PointCloud<pcl::PointXYZINormal>> results;
 
         double imu_mean_acc_norm;
         double cov_inv_expo;
