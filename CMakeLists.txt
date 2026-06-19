@@ -33,7 +33,7 @@ find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
 find_package(Eigen3 REQUIRED NO_MODULE)
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common io filters visualization)
 
 #--------------------------------------------------------------------------------------#
 #   项目编译设置
@@ -63,6 +63,13 @@ add_executable(
     src/core/vio_process.cpp
     src/core/voxel_mapper.hpp
     src/core/voxel_mapper.cpp
+)
+target_precompile_headers(
+    ${PROJECT_NAME} PRIVATE
+    <opencv2/opencv.hpp>
+    <Eigen/Core>
+    <pcl/point_cloud.h>
+    <pcl/point_types.h>
 )
 target_include_directories(
     ${PROJECT_NAME} PRIVATE
@@ -127,6 +134,13 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/libs/toml++
     ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
     ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
+)
+target_precompile_headers(
+    ${PROJECT_NAME}_simulation PRIVATE
+    <opencv2/opencv.hpp>
+    <Eigen/Core>
+    <pcl/point_cloud.h>
+    <pcl/point_types.h>
 )
 target_link_libraries(
     ${PROJECT_NAME}_simulation PRIVATE

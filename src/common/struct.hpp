@@ -1,4 +1,4 @@
-#ifndef HSM_STRUCT_H
+#ifndef c
 #define HSM_STRUCT_H
 
 #include "opencv2/opencv.hpp"
