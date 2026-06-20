@@ -9,19 +9,31 @@
 
 #include "rerun.hpp"
 
-#include "sensor/hk_camera.hpp"
-#include "sensor/mid360_lidar.hpp"
+#define USE_WEBOT
+
+#ifdef USE_WEBOT
+    #include "sensor/webot_lidar.hpp"
+    #include "sensor/webot_camera.hpp"
+#else
+    #include "sensor/hk_camera.hpp"
+    #include "sensor/mid360_lidar.hpp"
+#endif
 
 int main()
 {
     try
     {
         const auto rec = rerun::RecordingStream("slam_fast_livo2");
-        rec.spawn().exit_on_failure();
+        rec.connect_grpc("rerun+http://127.0.0.1:9876/proxy").exit_on_failure();
 
+#ifdef USE_WEBOT
+        auto camera = hsm::make_webot_camera();
+        auto lidar  = hsm::make_webot_lidar();
+#else
         auto camera = hsm::make_hk_camera();
         auto lidar  = hsm::make_livox_lidar();
-        
+#endif
+
         cv::namedWindow("Camera", cv::WINDOW_AUTOSIZE);
 
         std::vector<Eigen::Vector3d> point_buf;
@@ -38,7 +50,7 @@ int main()
             for (;;)
             {
                 hsm::timestamped<hsm::point_data> item;
-                if (!lidar->get_points(item)) break;
+                if (! lidar->get_points(item)) break;
 
                 fmt::print(FMT_COMPILE("[lidar] {} {}\n"), item.device_timestamp, item.host_timestamp);
 

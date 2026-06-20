@@ -18,7 +18,7 @@ static void _webot_camera_recv_loop(
 {
 }
 
-std::shared_ptr<webot_camera> hsm::make_webot_camera(const std::string& host, uint16_t port)
+std::shared_ptr<webot_camera> hsm::make_webot_camera(const std::string& host, size_t port)
 {
     static bool is_init = false;
     throw_if(is_init, fmt::format(FMT_COMPILE("尝试重复初始化相机\n")));
@@ -28,7 +28,7 @@ std::shared_ptr<webot_camera> hsm::make_webot_camera(const std::string& host, ui
     auto webots_camera_ptr = std::make_shared<webot_camera>();
     webots_camera_ptr->running_label.store(true);
     webots_camera_ptr->back_thread = std::jthread(
-        [&endpoint, webots_camera_ptr]()
+        [endpoint, webots_camera_ptr]()
         {
             // ZMQ 上下文与 SUB 套接字 (线程局部, 析构自动清理)
             zmq::context_t ctx(1);
@@ -53,8 +53,8 @@ std::shared_ptr<webot_camera> hsm::make_webot_camera(const std::string& host, ui
                     {
                         // ZMQ 多部分消息: 第1部分 topic, 第2部分 payload
                         zmq::message_t topic_msg, payload_msg;
-                        sub.recv(topic_msg);
-                        sub.recv(payload_msg);
+                        std::ignore = sub.recv(topic_msg);
+                        std::ignore = sub.recv(payload_msg);
 
                         // 构造 span 供解析器使用
                         auto payload = std::span<const uint8_t>(static_cast<const uint8_t*>(payload_msg.data()), payload_msg.size());

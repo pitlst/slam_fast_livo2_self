@@ -44,6 +44,7 @@ find_package(PCL REQUIRED COMPONENTS common io filters visualization)
 #--------------------------------------------------------------------------------------#
 #   项目编译设置
 #--------------------------------------------------------------------------------------#
+
 # 把项目目录定义成宏传递给程序
 add_compile_definitions(PROJECT_PATH="${PROJECT_SOURCE_DIR}/")
 add_executable(
@@ -64,17 +65,20 @@ add_executable(
     src/sensor/webot_camera.cpp
     src/sensor/webot_lidar.hpp
     src/sensor/webot_lidar.cpp
-    src/core/livo_mapper.hpp
-    src/core/livo_mapper.cpp
-    src/core/point_preprocess.hpp
-    src/core/point_preprocess.cpp
-    src/core/imu_process.hpp
-    src/core/imu_process.cpp
-    src/core/vio_process.hpp
-    src/core/vio_process.cpp
-    src/core/voxel_mapper.hpp
-    src/core/voxel_mapper.cpp
+    # src/core/livo_mapper.hpp
+    # src/core/livo_mapper.cpp
+    # src/core/point_preprocess.hpp
+    # src/core/point_preprocess.cpp
+    # src/core/imu_process.hpp
+    # src/core/imu_process.cpp
+    # src/core/vio_process.hpp
+    # src/core/vio_process.cpp
+    # src/core/voxel_mapper.hpp
+    # src/core/voxel_mapper.cpp
 )
+if(USE_WEBOT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_WEBOT=1)
+endif()
 target_precompile_headers(
     ${PROJECT_NAME} PRIVATE
     <opencv2/opencv.hpp>
@@ -89,6 +93,7 @@ target_include_directories(
     ${LIVOX_SDK}/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/libs/toml++
+    ${PROJECT_SOURCE_DIR}/libs/nlohmann
     ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
     ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
 )
@@ -108,7 +113,7 @@ target_link_libraries(
     pcl_io
     pcl_filters
     pcl_visualization
-    cppzmq-static
+    cppzmq
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
     ${HIK_LIBS}
