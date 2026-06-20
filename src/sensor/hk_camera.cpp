@@ -29,6 +29,9 @@ void __stdcall _hk_camera_callback(unsigned char* pData, MV_FRAME_OUT_INFO_EX* p
 
 std::unique_ptr<hk_camera> hsm::make_hk_camera()
 {
+    static bool is_init = false;
+    throw_if(is_init, fmt::format(FMT_COMPILE("尝试重复初始化相机\n")));
+
     auto hk_camera_ptr = std::make_unique<hk_camera>();
 
     MV_CC_DEVICE_INFO_LIST stDeviceList;
@@ -76,7 +79,9 @@ std::unique_ptr<hk_camera> hsm::make_hk_camera()
 
     nRet = MV_CC_StartGrabbing(hk_camera_ptr->handle);
     throw_if(MV_OK != nRet, fmt::format(FMT_COMPILE("MV_CC_StartGrabbing fail! nRet {}\n"), nRet));
+
     fmt::print("[hik camera] 相机初始化完成\n");
+    is_init = true;
     return hk_camera_ptr;
 }
 

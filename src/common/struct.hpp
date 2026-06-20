@@ -1,4 +1,4 @@
-#ifndef c
+#ifndef HSM_STRUCT_H
 #define HSM_STRUCT_H
 
 #include "opencv2/opencv.hpp"
@@ -32,15 +32,36 @@ namespace hsm
     // 所有传感器缓冲区的大小限制
     inline constexpr size_t K_BUFFER_CAPACITY = 64;
 
-    struct point_data
+    // 激光雷达的单行数据
+    struct raw_point
     {
-        std::vector<LivoxLidarCartesianHighRawPoint> points;
-        uint16_t                                     time_interval;
-        uint16_t                                     dot_num;
+        int32_t x;
+        int32_t y;
+        int32_t z;
+        uint8_t reflectivity;
+        uint8_t tag;
     };
 
-    // 驱动的数据别名
-    using imu_data = LivoxLidarImuRawPoint;
+    // 激光雷达的整体点云数据
+    struct point_data
+    {
+        std::vector<raw_point> points;
+        uint16_t               time_interval;
+        uint16_t               dot_num;
+    };
+
+    // imu数据
+    struct imu_data
+    {
+        // 角速度
+        float gyro_x;
+        float gyro_y;
+        float gyro_z;
+        // 加速度
+        float acc_x;
+        float acc_y;
+        float acc_z;
+    };
 
     // 缓冲区的别名
     using point_queue = moodycamel::ReaderWriterQueue<timestamped<point_data>>;
@@ -107,77 +128,47 @@ namespace hsm
 
     struct states_group
     {
-    public:
-        states_group()
-        {
-            this->rot_end                 = Eigen::Matrix3d::Identity();
-            this->pos_end                 = Eigen::Vector3d::Zero();
-            this->vel_end                 = Eigen::Vector3d::Zero();
-            this->bias_g                  = Eigen::Vector3d::Zero();
-            this->bias_a                  = Eigen::Vector3d::Zero();
-            this->gravity                 = Eigen::Vector3d::Zero();
-            this->inv_expo_time           = 1.0;
-            this->cov                     = Eigen::Matrix<double, 19, 19>::Identity() * 0.01;
-            this->cov(6, 6)               = 0.00001;
-            this->cov.block<9, 9>(10, 10) = Eigen::Matrix<double, 9, 9>::Identity() * 0.00001;
-        };
+        // 类内默认初始化（C++11）。协方差用 IIFE 初始化，避免构造函数体重复逻辑
+        Eigen::Matrix3d rot_end       = Eigen::Matrix3d::Identity();
+        Eigen::Vector3d pos_end       = Eigen::Vector3d::Zero();
+        Eigen::Vector3d vel_end       = Eigen::Vector3d::Zero();
+        Eigen::Vector3d bias_g        = Eigen::Vector3d::Zero();
+        Eigen::Vector3d bias_a        = Eigen::Vector3d::Zero();
+        Eigen::Vector3d gravity       = Eigen::Vector3d::Zero();
+        double          inv_expo_time = 1.0;
 
-        states_group(const states_group& b)
+        Eigen::Matrix<double, 19, 19> cov = []
         {
-            this->rot_end       = b.rot_end;
-            this->pos_end       = b.pos_end;
-            this->vel_end       = b.vel_end;
-            this->bias_g        = b.bias_g;
-            this->bias_a        = b.bias_a;
-            this->gravity       = b.gravity;
-            this->inv_expo_time = b.inv_expo_time;
-            this->cov           = b.cov;
-        };
+            Eigen::Matrix<double, 19, 19> c = Eigen::Matrix<double, 19, 19>::Identity() * 0.01;
+            c(6, 6)                         = 0.00001;
+            c.block<9, 9>(10, 10)           = Eigen::Matrix<double, 9, 9>::Identity() * 0.00001;
+            return c;
+        }();
 
-        states_group& operator=(const states_group& b)
+        // 基于 += 实现 +，消除重复代码；并标记 const 与 nodiscard
+        [[nodiscard]] states_group operator+(const Eigen::Matrix<double, 19, 1>& state_add) const
         {
-            this->rot_end       = b.rot_end;
-            this->pos_end       = b.pos_end;
-            this->vel_end       = b.vel_end;
-            this->bias_g        = b.bias_g;
-            this->bias_a        = b.bias_a;
-            this->gravity       = b.gravity;
-            this->inv_expo_time = b.inv_expo_time;
-            this->cov           = b.cov;
-            return *this;
-        };
-
-        states_group operator+(const Eigen::Matrix<double, 19, 1>& state_add)
-        {
-            states_group a;
-            a.rot_end       = this->rot_end * Exp(state_add(0, 0), state_add(1, 0), state_add(2, 0));
-            a.pos_end       = this->pos_end + state_add.block<3, 1>(3, 0);
-            a.inv_expo_time = this->inv_expo_time + state_add(6, 0);
-            a.vel_end       = this->vel_end + state_add.block<3, 1>(7, 0);
-            a.bias_g        = this->bias_g + state_add.block<3, 1>(10, 0);
-            a.bias_a        = this->bias_a + state_add.block<3, 1>(13, 0);
-            a.gravity       = this->gravity + state_add.block<3, 1>(16, 0);
-
-            a.cov = this->cov;
-            return a;
-        };
+            states_group result = *this;
+            result += state_add;
+            return result;
+        }
 
         states_group& operator+=(const Eigen::Matrix<double, 19, 1>& state_add)
         {
-            this->rot_end = this->rot_end * Exp(state_add(0, 0), state_add(1, 0), state_add(2, 0));
-            this->pos_end += state_add.block<3, 1>(3, 0);
-            this->inv_expo_time += state_add(6, 0);
-            this->vel_end += state_add.block<3, 1>(7, 0);
-            this->bias_g += state_add.block<3, 1>(10, 0);
-            this->bias_a += state_add.block<3, 1>(13, 0);
-            this->gravity += state_add.block<3, 1>(16, 0);
+            rot_end = rot_end * Exp(state_add(0, 0), state_add(1, 0), state_add(2, 0));
+            pos_end += state_add.block<3, 1>(3, 0);
+            inv_expo_time += state_add(6, 0);
+            vel_end += state_add.block<3, 1>(7, 0);
+            bias_g += state_add.block<3, 1>(10, 0);
+            bias_a += state_add.block<3, 1>(13, 0);
+            gravity += state_add.block<3, 1>(16, 0);
             return *this;
-        };
+        }
 
-        Eigen::Matrix<double, 19, 1> operator-(const states_group& b)
+        [[nodiscard]] Eigen::Matrix<double, 19, 1> operator-(const states_group& b) const
         {
             Eigen::Matrix<double, 19, 1> a;
-            Eigen::Matrix3d              rotd(b.rot_end.transpose() * this->rot_end);
+            const Eigen::Matrix3d        rotd = b.rot_end.transpose() * this->rot_end;
 
             a.block<3, 1>(0, 0)  = Log(rotd);
             a.block<3, 1>(3, 0)  = this->pos_end - b.pos_end;
@@ -187,24 +178,14 @@ namespace hsm
             a.block<3, 1>(13, 0) = this->bias_a - b.bias_a;
             a.block<3, 1>(16, 0) = this->gravity - b.gravity;
             return a;
-        };
-
-        void resetpose()
-        {
-            this->rot_end = Eigen::Matrix3d::Identity();
-            this->pos_end = Eigen::Vector3d::Zero();
-            this->vel_end = Eigen::Vector3d::Zero();
         }
 
-    public:
-        Eigen::Matrix3d               rot_end;       // the estimated attitude (rotation matrix) at the end lidar point
-        Eigen::Vector3d               pos_end;       // the estimated position at the end lidar point (world frame)
-        Eigen::Vector3d               vel_end;       // the estimated velocity at the end lidar point (world frame)
-        double                        inv_expo_time; // the estimated inverse exposure time (no scale)
-        Eigen::Vector3d               bias_g;        // gyroscope bias
-        Eigen::Vector3d               bias_a;        // accelerator bias
-        Eigen::Vector3d               gravity;       // the estimated gravity acceleration
-        Eigen::Matrix<double, 19, 19> cov;           // states covariance
+        void resetpose() noexcept
+        {
+            rot_end = Eigen::Matrix3d::Identity();
+            pos_end = Eigen::Vector3d::Zero();
+            vel_end = Eigen::Vector3d::Zero();
+        }
     };
 
 } // namespace hsm

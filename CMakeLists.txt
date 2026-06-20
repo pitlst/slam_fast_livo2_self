@@ -29,6 +29,12 @@ set(LIVOX_SDK ${PROJECT_SOURCE_DIR}/../Livox-SDK2)
 # 找到opencv
 set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/../opencv/build)
 find_package(OpenCV REQUIRED)
+# 找到rerun
+set(rerun_sdk_DIR ${PROJECT_SOURCE_DIR}/../rerun_sdk_install/lib/cmake/rerun_sdk)
+find_package(rerun_sdk REQUIRED)
+# 查找 ZeroMQ
+set(OpenCV_DIR ${PROJECT_SOURCE_DIR}/../cppzmq/build)
+find_package(cppzmq REQUIRED)
 # 其他的库
 find_package(fmt REQUIRED)
 find_package(absl REQUIRED)
@@ -53,6 +59,11 @@ add_executable(
     src/sensor/hk_camera.cpp
     src/sensor/mid360_lidar.hpp
     src/sensor/mid360_lidar.cpp
+    src/sensor/webot_proto.hpp
+    src/sensor/webot_camera.hpp
+    src/sensor/webot_camera.cpp
+    src/sensor/webot_lidar.hpp
+    src/sensor/webot_lidar.cpp
     src/core/livo_mapper.hpp
     src/core/livo_mapper.cpp
     src/core/point_preprocess.hpp
@@ -97,66 +108,8 @@ target_link_libraries(
     pcl_io
     pcl_filters
     pcl_visualization
+    cppzmq-static
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
     ${HIK_LIBS}
-)
-
-add_executable(
-    ${PROJECT_NAME}_simulation
-    src/simulation.cpp
-    src/common/common.hpp
-    src/common/enhanced_exception.hpp
-    src/common/struct.hpp
-    src/common/so3_math.hpp
-    src/time_sync/time_sync.hpp
-    src/time_sync/time_sync.cpp
-    src/sensor/hk_camera.hpp
-    src/sensor/hk_camera.cpp
-    src/sensor/mid360_lidar.hpp
-    src/sensor/mid360_lidar.cpp
-    src/core/livo_mapper.hpp
-    src/core/livo_mapper.cpp
-    src/core/point_preprocess.hpp
-    src/core/point_preprocess.cpp
-    src/core/imu_process.hpp
-    src/core/imu_process.cpp
-    src/core/vio_process.hpp
-    src/core/vio_process.cpp
-    src/core/voxel_mapper.hpp
-    src/core/voxel_mapper.cpp
-)
-target_include_directories(
-    ${PROJECT_NAME}_simulation PRIVATE
-    /opt/MVS/include
-    ${OpenCV_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/libs/toml++
-    ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
-    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
-)
-target_precompile_headers(
-    ${PROJECT_NAME}_simulation PRIVATE
-    <opencv2/opencv.hpp>
-    <Eigen/Core>
-    <pcl/point_cloud.h>
-    <pcl/point_types.h>
-)
-target_link_libraries(
-    ${PROJECT_NAME}_simulation PRIVATE
-    pthread
-    absl::strings
-    absl::str_format
-    absl::numeric
-    absl::int128
-    absl::base
-    absl::utility
-    fmt::fmt
-    Eigen3::Eigen
-    rerun_sdk
-    pcl_common
-    pcl_io
-    pcl_filters
-    pcl_visualization
-    ${OpenCV_LIBS}
 )
