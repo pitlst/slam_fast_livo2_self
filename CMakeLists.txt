@@ -65,20 +65,17 @@ add_executable(
     src/sensor/webot_camera.cpp
     src/sensor/webot_lidar.hpp
     src/sensor/webot_lidar.cpp
-    # src/core/livo_mapper.hpp
-    # src/core/livo_mapper.cpp
-    # src/core/point_preprocess.hpp
-    # src/core/point_preprocess.cpp
-    # src/core/imu_process.hpp
-    # src/core/imu_process.cpp
-    # src/core/vio_process.hpp
-    # src/core/vio_process.cpp
-    # src/core/voxel_mapper.hpp
-    # src/core/voxel_mapper.cpp
+    src/core/livo_mapper.hpp
+    src/core/livo_mapper.cpp
+    src/core/point_preprocess.hpp
+    src/core/point_preprocess.cpp
+    src/core/imu_process.hpp
+    src/core/imu_process.cpp
+    src/core/vio_process.hpp
+    src/core/vio_process.cpp
+    src/core/voxel_mapper.hpp
+    src/core/voxel_mapper.cpp
 )
-if(USE_WEBOT)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_WEBOT=1)
-endif()
 target_precompile_headers(
     ${PROJECT_NAME} PRIVATE
     <opencv2/opencv.hpp>

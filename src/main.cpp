@@ -9,15 +9,12 @@
 
 #include "rerun.hpp"
 
-#define USE_WEBOT
+#include "sensor/webot_lidar.hpp"
+#include "sensor/webot_camera.hpp"
 
-#ifdef USE_WEBOT
-    #include "sensor/webot_lidar.hpp"
-    #include "sensor/webot_camera.hpp"
-#else
-    #include "sensor/hk_camera.hpp"
-    #include "sensor/mid360_lidar.hpp"
-#endif
+#include "sensor/hk_camera.hpp"
+#include "sensor/mid360_lidar.hpp"
+
 
 int main()
 {
@@ -26,13 +23,12 @@ int main()
         const auto rec = rerun::RecordingStream("slam_fast_livo2");
         rec.connect_grpc("rerun+http://127.0.0.1:9876/proxy").exit_on_failure();
 
-#ifdef USE_WEBOT
+
         auto camera = hsm::make_webot_camera();
         auto lidar  = hsm::make_webot_lidar();
-#else
-        auto camera = hsm::make_hk_camera();
-        auto lidar  = hsm::make_livox_lidar();
-#endif
+
+        // auto camera = hsm::make_hk_camera();
+        // auto lidar  = hsm::make_livox_lidar();
 
         cv::namedWindow("Camera", cv::WINDOW_AUTOSIZE);
 
