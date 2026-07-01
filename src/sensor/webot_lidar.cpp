@@ -5,7 +5,6 @@
 #include <zmq.hpp>
 
 #include "sensor/webot_lidar.hpp"
-#include "sensor/webot_proto.hpp"
 
 using namespace hsm;
 

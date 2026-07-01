@@ -1,6 +1,7 @@
 #include <cmath>
 #include <algorithm>
 #include <exception>
+#include <zstd.h>
 
 #include "Eigen/Core"
 

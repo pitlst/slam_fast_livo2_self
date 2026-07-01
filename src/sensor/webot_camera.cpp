@@ -2,9 +2,9 @@
 #include <thread>
 #include <string>
 
-#include "sensor/webot_camera.hpp"
-#include "sensor/webot_proto.hpp"
+#include <zstd.h>
 
+#include "sensor/webot_camera.hpp"
 #include "zmq.hpp"
 
 using namespace hsm;
