@@ -10,6 +10,7 @@
 
 构建
 ```bash
-cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc-16 ..
+cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc-16 .. -G Ninja
+cmake --build . --config Release -j 20
 ```
 

@@ -1,10 +1,5 @@
-#include <chrono>
-#include <thread>
-#include <string>
-
-#include <zmq.hpp>
-
 #include "sensor/webot_lidar.hpp"
+#include "common/enhanced_exception.hpp"
 
 using namespace hsm;
 
