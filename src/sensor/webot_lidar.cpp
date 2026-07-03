@@ -9,7 +9,7 @@ static imu_queue   _imu_queue(K_BUFFER_CAPACITY);
 // 外参旋转矩阵
 static Eigen::Matrix3f _imu_rotation = Eigen::Matrix3f::Identity();
 
-std::shared_ptr<webot_lidar> hsm::make_webot_lidar(const std::string& host, size_t port, const Eigen::Matrix3f& imu_rotation)
+std::shared_ptr<webot_lidar> hsm::make_webot_lidar(std::string const& host, size_t port, Eigen::Matrix3f const& imu_rotation)
 {
     static bool is_init = false;
     throw_if(is_init, fmt::format(FMT_COMPILE("尝试重复初始化激光雷达\n")));
@@ -49,11 +49,11 @@ std::shared_ptr<webot_lidar> hsm::make_webot_lidar(const std::string& host, size
                         std::ignore = sub.recv(topic_msg);
                         std::ignore = sub.recv(payload_msg);
 
-                        std::string_view topic(static_cast<const char*>(topic_msg.data()), topic_msg.size());
-                        auto             payload = std::span<const uint8_t>(static_cast<const uint8_t*>(payload_msg.data()), payload_msg.size());
+                        std::string_view topic(static_cast<char const*>(topic_msg.data()), topic_msg.size());
+                        auto             payload = std::span<uint8_t const>(static_cast<uint8_t const*>(payload_msg.data()), payload_msg.size());
                         if (topic == "info")
                         {
-                            std::string_view json(reinterpret_cast<const char*>(payload.data()), payload.size());
+                            std::string_view json(reinterpret_cast<char const*>(payload.data()), payload.size());
                             sensor_info = webot_proto::parse_metadata(json);
                             fmt::print("[webot_lidar] Metadata: FOV={:.3f} rad (H) x {:.3f} rad (V)\n", sensor_info.lidar_fov, sensor_info.lidar_vfov);
                         }
@@ -88,10 +88,10 @@ std::shared_ptr<webot_lidar> hsm::make_webot_lidar(const std::string& host, size
                             raw.acc_z  = imu_frame.accel[2];
 
                             // 应用 IMU 外参旋转 (与 mid360_lidar 的 _livox_imu_callback 一致)
-                            const Eigen::Vector3f gyro(raw.gyro_x, raw.gyro_y, raw.gyro_z);
-                            const Eigen::Vector3f accel(raw.acc_x, raw.acc_y, raw.acc_z);
-                            const Eigen::Vector3f g = _imu_rotation * gyro;
-                            const Eigen::Vector3f a = _imu_rotation * accel;
+                            Eigen::Vector3f const gyro(raw.gyro_x, raw.gyro_y, raw.gyro_z);
+                            Eigen::Vector3f const accel(raw.acc_x, raw.acc_y, raw.acc_z);
+                            Eigen::Vector3f const g = _imu_rotation * gyro;
+                            Eigen::Vector3f const a = _imu_rotation * accel;
 
                             raw.gyro_x = g.x();
                             raw.gyro_y = g.y();
@@ -104,7 +104,7 @@ std::shared_ptr<webot_lidar> hsm::make_webot_lidar(const std::string& host, size
                             _imu_queue.try_enqueue(timestamped<imu_data> {imu_frame.timestamp_us, host_ts, raw});
                         }
                     }
-                    catch (const std::exception& e)
+                    catch (std::exception const& e)
                     {
                         fmt::print(stderr, "[webot_lidar] Parse error: {}\n", e.what());
                     }

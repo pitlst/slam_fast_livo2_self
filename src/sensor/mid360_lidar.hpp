@@ -17,7 +17,7 @@ namespace hsm
 {
     struct livox_lidar
     {
-        friend std::unique_ptr<livox_lidar> make_livox_lidar(const std::filesystem::path& input_path, const Eigen::Matrix3f& imu_rotation);
+        friend std::unique_ptr<livox_lidar> make_livox_lidar(std::filesystem::path const& input_path, Eigen::Matrix3f const& imu_rotation);
 
     public:
         ~livox_lidar();
@@ -30,8 +30,8 @@ namespace hsm
     };
 
     std::unique_ptr<livox_lidar> make_livox_lidar(
-        const std::filesystem::path& input_path   = std::filesystem::path(PROJECT_PATH) / "config" / "mid360.json",
-        const Eigen::Matrix3f&       imu_rotation = Eigen::Matrix3f::Identity());
+        std::filesystem::path const& input_path   = std::filesystem::path(PROJECT_PATH) / "config" / "mid360.json",
+        Eigen::Matrix3f const&       imu_rotation = Eigen::Matrix3f::Identity());
 } // namespace hsm
 
 #endif

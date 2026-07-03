@@ -8,7 +8,7 @@ static imu_queue   _imu_queue(K_BUFFER_CAPACITY);
 // 外参旋转矩阵
 static Eigen::Matrix3f _imu_rotation = Eigen::Matrix3f::Identity();
 
-uint64_t _parse_livox_timestamp(const uint8_t ts[8])
+uint64_t _parse_livox_timestamp(uint8_t const ts[8])
 {
     uint64_t raw;
     std::memcpy(&raw, ts, sizeof(raw));
@@ -19,19 +19,19 @@ uint64_t _parse_livox_timestamp(const uint8_t ts[8])
     return raw;
 }
 
-void _livox_point_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data)
+void _livox_point_callback(uint32_t handle, uint8_t const dev_type, LivoxLidarEthernetPacket* data, void* client_data)
 {
     if (! data || data->data_type != kLivoxLidarCartesianCoordinateHighData)
     {
         return;
     }
     // 雷达时间戳
-    const uint64_t device_ts = _parse_livox_timestamp(data->timestamp);
+    uint64_t const device_ts = _parse_livox_timestamp(data->timestamp);
     // 主机时间戳
-    const uint64_t host_ts = hsm::get_now_pc_time();
+    uint64_t const host_ts = hsm::get_now_pc_time();
     // 雷达数据
-    const uint16_t count = data->dot_num;
-    const auto*    src   = reinterpret_cast<const LivoxLidarCartesianHighRawPoint*>(data->data);
+    uint16_t const count = data->dot_num;
+    auto const*    src   = reinterpret_cast<LivoxLidarCartesianHighRawPoint const*>(data->data);
 
     point_data buf;
     buf.dot_num       = count;
@@ -51,29 +51,29 @@ void _livox_point_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEt
     _point_queue.try_enqueue({device_ts, host_ts, std::move(buf)});
 }
 
-void _livox_imu_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket* data, void* client_data)
+void _livox_imu_callback(uint32_t handle, uint8_t const dev_type, LivoxLidarEthernetPacket* data, void* client_data)
 {
     if (! data || data->data_type != kLivoxLidarImuData)
     {
         return;
     }
     // 雷达时间戳 (所有采样共享同一包时间戳)
-    const uint64_t device_ts = _parse_livox_timestamp(data->timestamp);
+    uint64_t const device_ts = _parse_livox_timestamp(data->timestamp);
     // 主机时间戳
-    const uint64_t host_ts = hsm::get_now_pc_time();
+    uint64_t const host_ts = hsm::get_now_pc_time();
     // 本包中的 IMU 采样个数
-    const uint16_t count = data->dot_num;
-    const auto*    src   = reinterpret_cast<const LivoxLidarImuRawPoint*>(data->data);
+    uint16_t const count = data->dot_num;
+    auto const*    src   = reinterpret_cast<LivoxLidarImuRawPoint const*>(data->data);
 
     for (uint16_t i = 0; i < count; ++i)
     {
         imu_data raw;
         std::memcpy(&raw, &src[i], sizeof(imu_data));
 
-        const Eigen::Vector3f gyro(raw.gyro_x, raw.gyro_y, raw.gyro_z);
-        const Eigen::Vector3f accel(raw.acc_x, raw.acc_y, raw.acc_z);
-        const Eigen::Vector3f g = _imu_rotation * gyro;
-        const Eigen::Vector3f a = _imu_rotation * accel;
+        Eigen::Vector3f const gyro(raw.gyro_x, raw.gyro_y, raw.gyro_z);
+        Eigen::Vector3f const accel(raw.acc_x, raw.acc_y, raw.acc_z);
+        Eigen::Vector3f const g = _imu_rotation * gyro;
+        Eigen::Vector3f const a = _imu_rotation * accel;
 
         raw.gyro_x = g.x();
         raw.gyro_y = g.y();
@@ -86,14 +86,14 @@ void _livox_imu_callback(uint32_t handle, const uint8_t dev_type, LivoxLidarEthe
     }
 }
 
-void _livox_device_online_callback(uint32_t handle, const LivoxLidarInfo* info, void* client_data)
+void _livox_device_online_callback(uint32_t handle, LivoxLidarInfo const* info, void* client_data)
 {
     if (! info) return;
     fmt::print("[Livox] 设备在线, SN: {}\n", info->sn);
     SetLivoxLidarWorkMode(handle, kLivoxLidarNormal, nullptr, nullptr);
 }
 
-std::unique_ptr<livox_lidar> hsm::make_livox_lidar(const std::filesystem::path& input_path, const Eigen::Matrix3f& imu_rotation)
+std::unique_ptr<livox_lidar> hsm::make_livox_lidar(std::filesystem::path const& input_path, Eigen::Matrix3f const& imu_rotation)
 {
     static bool is_init = false;
     throw_if(is_init, fmt::format(FMT_COMPILE("尝试重复初始化激光雷达\n")));

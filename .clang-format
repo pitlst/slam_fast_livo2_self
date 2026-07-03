@@ -86,3 +86,4 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 # 命名空间内代码换行
 NamespaceIndentation: All
+QualifierAlignment: Right

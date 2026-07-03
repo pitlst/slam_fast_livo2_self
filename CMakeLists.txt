@@ -48,6 +48,7 @@ add_executable(
     src/common/enhanced_exception.hpp
     src/common/struct.hpp
     src/common/so3_math.hpp
+    src/common/zstd_warpper.hpp
     src/time_sync/time_sync.hpp
     src/time_sync/time_sync.cpp
     src/sensor/hk_camera.hpp
@@ -98,4 +99,45 @@ target_link_libraries(
     ${LIVOX_SDK}/build/sdk_core/liblivox_lidar_sdk_shared.so
     ${OpenCV_LIBS}
     ${HIK_LIBS}
+)
+
+
+
+# 把项目目录定义成宏传递给程序
+add_executable(
+    ${PROJECT_NAME}_zstdtest
+    test/zstd_test.cpp
+    src/common/common.hpp
+    src/common/enhanced_exception.hpp
+    src/common/struct.hpp
+    src/common/so3_math.hpp
+    src/common/zstd_warpper.hpp
+)
+target_include_directories(
+    ${PROJECT_NAME}_zstdtest PRIVATE
+    /opt/MVS/include
+    ${OpenCV_INCLUDE_DIRS}
+    ${LIVOX_SDK}/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/libs/toml++
+    ${PROJECT_SOURCE_DIR}/libs/nlohmann
+    ${PROJECT_SOURCE_DIR}/libs/readerwriterqueue
+    ${PROJECT_SOURCE_DIR}/libs/parallel_hashmap
+)
+target_link_libraries(
+    ${PROJECT_NAME}_zstdtest PRIVATE
+    pthread
+    absl::strings
+    absl::str_format
+    absl::numeric
+    absl::int128
+    absl::base
+    absl::utility
+    fmt::fmt
+    Eigen3::Eigen
+    rerun_sdk
+    pcl_common
+    pcl_filters
+    cppzmq
+    ${OpenCV_LIBS}
 )

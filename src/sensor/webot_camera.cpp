@@ -6,14 +6,14 @@ using namespace hsm;
 
 static frame_queue _camera_queue(K_BUFFER_CAPACITY);
 
-std::shared_ptr<webot_camera> hsm::make_webot_camera(std::shared_ptr<zmq::context_t> conetxt, const std::string& connect_url = "tcp://localhost:5555")
+std::shared_ptr<webot_camera> hsm::make_webot_camera(std::shared_ptr<zmq::context_t> conetxt, std::string const& connect_url = "tcp://localhost:5555")
 {
     static bool is_init = false;
     throw_if(is_init, fmt::format(FMT_COMPILE("尝试重复初始化相机\n")));
 
-    auto webots_camera_ptr = std::make_shared<webot_camera>();
+    auto webots_camera_ptr     = std::make_shared<webot_camera>();
     webots_camera_ptr->conetxt = conetxt;
-    webots_camera_ptr->socket = std::make_unique<zmq::socket_t>(*(webots_camera_ptr->conetxt), zmq::socket_type::sub);
+    webots_camera_ptr->socket  = std::make_unique<zmq::socket_t>(*(webots_camera_ptr->conetxt), zmq::socket_type::sub);
     webots_camera_ptr->socket->connect(connect_url);
     webots_camera_ptr->socket->set(zmq::sockopt::subscribe, "camera");
     webots_camera_ptr->socket->set(zmq::sockopt::rcvtimeo, 100);

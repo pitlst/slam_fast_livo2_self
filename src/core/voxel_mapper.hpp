@@ -33,7 +33,7 @@ namespace hsm
         int64_t y;
         int64_t z;
 
-        auto operator<=>(const voxel_location&) const = default;
+        auto operator<=>(voxel_location const&) const = default;
     };
 
     struct voxel_plane

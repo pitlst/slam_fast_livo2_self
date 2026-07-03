@@ -33,7 +33,7 @@ namespace hsm
             uint64_t last_update_ns = 0;
 
             // 格式化输出，便于调试
-            static std::string to_string(const clock_model& input_data);
+            static std::string to_string(clock_model const& input_data);
         };
 
         time_sync(size_t windows_size): windows_size(windows_size) {}
@@ -48,7 +48,7 @@ namespace hsm
 
     private:
         // 时间窗口大小限制
-        const size_t windows_size;
+        size_t const windows_size;
         // 当前所有的时间数据
         std::deque<timestamped<double>> time_buffer;
         // 时间同步器的状态

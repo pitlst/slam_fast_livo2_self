@@ -2,11 +2,11 @@
 
 using namespace hsm;
 
-static std::string to_string(const time_sync::clock_model& input_data)
+static std::string to_string(time_sync::clock_model const& input_data)
 {
     // 将纳秒时间戳拆分为 Unix 秒 + 纳秒余数，比 19 位纯数字更直观
-    const uint64_t sec  = input_data.last_update_ns / 1'000'000'000ULL;
-    const uint64_t nsec = input_data.last_update_ns % 1'000'000'000ULL;
+    uint64_t const sec  = input_data.last_update_ns / 1'000'000'000ULL;
+    uint64_t const nsec = input_data.last_update_ns % 1'000'000'000ULL;
 
     return fmt::format(
         FMT_COMPILE("offset={:.6f}s, mad={}, last_update={}.{:09}"),
@@ -31,7 +31,7 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     // 转换std::deque<timestamped<double>>为std::vector<double>
     std::vector<double> prepare_data;
     prepare_data.reserve(this->time_buffer.size());
-    for (const auto& ch : this->time_buffer)
+    for (auto const& ch : this->time_buffer)
     {
         prepare_data.emplace_back(ch.value);
     }
@@ -41,7 +41,7 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     std::vector<double> mean_data_;
     if (mad < 1e-6)
     {
-        for (const auto& ch : this->time_buffer)
+        for (auto const& ch : this->time_buffer)
         {
             if (std::abs(ch.value - med) <= 0.001)
             {
@@ -51,7 +51,7 @@ double time_sync::update(uint64_t device_timestamp, uint64_t host_timestamp)
     }
     else
     {
-        for (const auto& ch : this->time_buffer)
+        for (auto const& ch : this->time_buffer)
         {
             if (std::abs(ch.value - med) <= 3 * mad)
             {

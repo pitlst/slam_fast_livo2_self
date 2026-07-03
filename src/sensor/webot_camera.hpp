@@ -18,7 +18,7 @@ namespace hsm
 {
     struct webot_camera
     {
-        friend std::shared_ptr<webot_camera> make_webot_camera(std::shared_ptr<zmq::context_t> conetxt, const std::string& connect_url);
+        friend std::shared_ptr<webot_camera> make_webot_camera(std::shared_ptr<zmq::context_t> conetxt, std::string const& connect_url);
 
     public:
         ~webot_camera();
@@ -32,7 +32,7 @@ namespace hsm
     };
 
     // 工厂函数，所有使用zmq的接收器共用一个上下文
-    std::shared_ptr<webot_camera> make_webot_camera(std::shared_ptr<zmq::context_t> conetxt, const std::string& connect_url = "tcp://localhost:5555");
+    std::shared_ptr<webot_camera> make_webot_camera(std::shared_ptr<zmq::context_t> conetxt, std::string const& connect_url = "tcp://localhost:5555");
 } // namespace hsm
 
 #endif
