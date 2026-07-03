@@ -163,7 +163,7 @@ namespace hsm::zstd
         }
 
         // 解压缩到外部 cv::Mat，返回 timestamp
-        double decompress(void const* src, size_t srcSize, cv::Mat& dst)
+        std::pair<double, cv::Mat> decompress(void const* src, size_t srcSize)
         {
             throw_if(srcSize < sizeof(CameraPacketHeader), "数据小于 Header 大小，数据损坏");
 
@@ -201,27 +201,12 @@ namespace hsm::zstd
             {
                 throw_if(true, "不支持的通道数，仅支持 1/3/4");
             }
-
+            cv::Mat dst;
             dst.create(static_cast<int>(header.height), static_cast<int>(header.width), cv_type);
             throw_if(static_cast<size_t>(dst.total() * dst.elemSize()) != header.raw_len, "cv::Mat 尺寸与 Header 数据大小不匹配");
 
             std::memcpy(dst.data, raw.data(), written);
-            return header.timestamp;
-        }
-
-        double decompress(std::vector<uint8_t> const& src, cv::Mat& dst)
-        {
-            return decompress(src.data(), src.size(), dst);
-        }
-
-        // -----------------------------------------------------------------
-        // 解压缩并返回 (timestamp, cv::Mat)
-        // -----------------------------------------------------------------
-        std::pair<double, cv::Mat> decompress(void const* src, size_t srcSize)
-        {
-            cv::Mat      dst;
-            double const ts = decompress(src, srcSize, dst);
-            return {ts, std::move(dst)};
+            return std::make_pair(header.timestamp, dst);
         }
 
         std::pair<double, cv::Mat> decompress(std::vector<uint8_t> const& src)

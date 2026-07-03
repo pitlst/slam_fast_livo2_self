@@ -25,8 +25,6 @@ namespace hsm
 
         bool get(timestamped<cv::Mat>& out);
 
-        std::shared_ptr<zmq::context_t> conetxt;
-        std::unique_ptr<zmq::socket_t>  socket;
         std::jthread                    back_thread;
         std::atomic<bool>               running_label = false;
     };

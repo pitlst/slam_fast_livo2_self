@@ -19,8 +19,7 @@ int main()
         socket.recv(topic, zmq::recv_flags::none);
         socket.recv(payload, zmq::recv_flags::none);
 
-        cv::Mat img;
-        double  ts = decomp.decompress(payload.data(), payload.size(), img);
+        auto [ts, img] = decomp.decompress(payload.data(), payload.size());
 
         // img 现在是 BGR 格式，可直接用于 imshow 或 cv::imwrite
         cv::imshow("Received", img);

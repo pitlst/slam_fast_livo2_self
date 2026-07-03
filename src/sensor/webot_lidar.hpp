@@ -25,8 +25,6 @@ namespace hsm
         bool get_points(timestamped<point_data>& out);
         bool get_imu(timestamped<imu_data>&);
 
-        std::shared_ptr<zmq::context_t> conetxt;
-        std::unique_ptr<zmq::socket_t>  socket;
         std::jthread                    back_thread;
         std::atomic<bool>               running_label = false;
     };
