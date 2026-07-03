@@ -22,14 +22,15 @@ std::shared_ptr<webot_camera> hsm::make_webot_camera(std::shared_ptr<zmq::contex
             socket.connect(connect_url);
             socket.set(zmq::sockopt::subscribe, "camera");
             socket.set(zmq::sockopt::rcvtimeo, 100);
-            fmt::print(stderr, "[webot camera] ZMQ 已经连接到 {}\n", connect_url);
-            try
+            fmt::print("[webot camera] ZMQ 已经连接到 {}\n", connect_url);
+
+            while (webots_camera_ptr->running_label.load())
             {
-                while (webots_camera_ptr->running_label.load())
+                try
                 {
                     zmq::message_t topic, payload;
-                    socket.recv(topic, zmq::recv_flags::none);
-                    socket.recv(payload, zmq::recv_flags::none);
+                    std::ignore = socket.recv(topic, zmq::recv_flags::none);
+                    std::ignore = socket.recv(payload, zmq::recv_flags::none);
 
                     uint64_t host_ts           = get_now_pc_time();
                     auto [timestamp_us, frame] = decomp.decompress(payload.data(), payload.size());
@@ -37,19 +38,21 @@ std::shared_ptr<webot_camera> hsm::make_webot_camera(std::shared_ptr<zmq::contex
                     uint64_t device_timestamp = static_cast<uint64_t>(timestamp_us * 1000000000);
                     _camera_queue.try_enqueue(timestamped<cv::Mat> {device_timestamp, host_ts, frame});
                 }
-            }
-            catch (std::exception const& e)
-            {
-                fmt::print("图像获取线程发生错误：{}", e.what());
+                catch (std::exception const& e)
+                {
+                    fmt::print("[webot camera] 图像获取线程发生错误：{}", e.what());
+                }
             }
             socket.close();
+            fmt::print("[webot camera] 图像获取线程退出 \n");
         });
     return webots_camera_ptr;
 }
 
 webot_camera::~webot_camera()
 {
-    fmt::print("[webot_camera] 成功关闭\n");
+    this->running_label.store(false);
+    fmt::print("[webot_camera] 已析构\n");
 }
 
 bool webot_camera::get(timestamped<cv::Mat>& out)

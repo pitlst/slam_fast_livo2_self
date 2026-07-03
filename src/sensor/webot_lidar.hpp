@@ -23,7 +23,8 @@ namespace hsm
         ~webot_lidar();
 
         bool get_points(timestamped<point_data>& out);
-        bool get_imu(timestamped<imu_data>&);
+        bool get_accel(timestamped<imu_data>& out);
+        bool get_gyro(timestamped<imu_data>& out);
 
         std::jthread                    back_thread;
         std::atomic<bool>               running_label = false;

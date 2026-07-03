@@ -4,60 +4,46 @@
 using namespace hsm;
 
 static point_queue _point_queue(K_BUFFER_CAPACITY);
-static imu_queue   _imu_queue(K_BUFFER_CAPACITY);
+static imu_queue   _accel_queue(K_BUFFER_CAPACITY);
+static imu_queue   _gyro_queue(K_BUFFER_CAPACITY);
 
 // 外参旋转矩阵
 static Eigen::Matrix3f _imu_rotation = Eigen::Matrix3f::Identity();
 
-std::shared_ptr<webot_lidar> hsm::make_webot_lidar(std::string const& host, size_t port, Eigen::Matrix3f const& imu_rotation)
+std::shared_ptr<webot_lidar> hsm::make_webot_lidar(std::shared_ptr<zmq::context_t> conetxt, std::string const& connect_url, Eigen::Matrix3f const& imu_rotation)
 {
     static bool is_init = false;
     throw_if(is_init, fmt::format(FMT_COMPILE("尝试重复初始化激光雷达\n")));
 
-    _imu_rotation        = imu_rotation;
-    std::string endpoint = "tcp://" + host + ":" + std::to_string(port);
-
     auto webots_lidar_ptr = std::make_shared<webot_lidar>();
     webots_lidar_ptr->running_label.store(true);
     webots_lidar_ptr->back_thread = std::jthread(
-        [endpoint, webots_lidar_ptr]()
+        [conetxt, connect_url, imu_rotation, webots_lidar_ptr]()
         {
-            // 从 "info" 主题中提取的传感器参数
-            webot_proto::SensorInfo sensor_info;
-            // ZMQ 上下文与 SUB 套接字 (线程局部)
-            zmq::context_t ctx(1);
-            zmq::socket_t  sub(ctx, zmq::socket_type::sub);
-            // 订阅 "lidar" + "info" + "imu" 主题
-            sub.set(zmq::sockopt::subscribe, "lidar");
-            sub.set(zmq::sockopt::subscribe, "info");
-            sub.set(zmq::sockopt::subscribe, "imu");
-            sub.set(zmq::sockopt::rcvhwm, 4);
-            sub.set(zmq::sockopt::linger, 0);
-            sub.connect(endpoint);
-            fmt::print(stderr, "[webot_lidar] ZMQ SUB connected to {}\n", endpoint);
+            zmq::socket_t socket(*conetxt, zmq::socket_type::sub);
+            socket.connect(connect_url);
+            socket.set(zmq::sockopt::subscribe, "lidar");
+            socket.set(zmq::sockopt::subscribe, "accel");
+            socket.set(zmq::sockopt::subscribe, "gyro");
+            socket.set(zmq::sockopt::rcvtimeo, 100);
+            fmt::print(stderr, "[webot_lidar] ZMQ 已经连接到 {}\n", connect_url);
 
-            zmq::pollitem_t poll_items[] = {{static_cast<void*>(sub), 0, ZMQ_POLLIN, 0}};
+            zmq::pollitem_t poll_items[] = {{static_cast<void*>(socket), 0, ZMQ_POLLIN, 0}};
             while (webots_lidar_ptr->running_label.load())
             {
-                int rc = zmq::poll(poll_items, 1, std::chrono::milliseconds(100));
-                if (rc > 0 && (poll_items[0].revents & ZMQ_POLLIN))
+                try
                 {
-                    try
+                    int rc = zmq::poll(poll_items, 1, std::chrono::milliseconds(100));
+                    if (rc > 0 && (poll_items[0].revents & ZMQ_POLLIN))
                     {
                         // 多部分消息: topic + payload
                         zmq::message_t topic_msg, payload_msg;
-                        std::ignore = sub.recv(topic_msg);
-                        std::ignore = sub.recv(payload_msg);
+                        std::ignore = socket.recv(topic_msg);
+                        std::ignore = socket.recv(payload_msg);
 
                         std::string_view topic(static_cast<char const*>(topic_msg.data()), topic_msg.size());
                         auto             payload = std::span<uint8_t const>(static_cast<uint8_t const*>(payload_msg.data()), payload_msg.size());
-                        if (topic == "info")
-                        {
-                            std::string_view json(reinterpret_cast<char const*>(payload.data()), payload.size());
-                            sensor_info = webot_proto::parse_metadata(json);
-                            fmt::print("[webot_lidar] Metadata: FOV={:.3f} rad (H) x {:.3f} rad (V)\n", sensor_info.lidar_fov, sensor_info.lidar_vfov);
-                        }
-                        else if (topic == "lidar")
+                        if (topic == "lidar")
                         {
                             auto lidar = webot_proto::parse_lidar(payload);
                             // 距离阵 → 原始点云 (int32 mm)
@@ -75,7 +61,7 @@ std::shared_ptr<webot_lidar> hsm::make_webot_lidar(std::string const& host, size
                             uint64_t host_ts = get_now_pc_time();
                             _point_queue.try_enqueue(timestamped<point_data> {lidar.timestamp_us, host_ts, std::move(pd)});
                         }
-                        else if (topic == "imu")
+                        else if (topic == "accel")
                         {
                             auto imu_frame = webot_proto::parse_imu(payload);
 
@@ -103,13 +89,17 @@ std::shared_ptr<webot_lidar> hsm::make_webot_lidar(std::string const& host, size
                             uint64_t host_ts = get_now_pc_time();
                             _imu_queue.try_enqueue(timestamped<imu_data> {imu_frame.timestamp_us, host_ts, raw});
                         }
-                    }
-                    catch (std::exception const& e)
-                    {
-                        fmt::print(stderr, "[webot_lidar] Parse error: {}\n", e.what());
+                        else if (topic == "gyro")
+                        {
+                        }
                     }
                 }
+                catch (std::exception const& e)
+                {
+                    fmt::print(stderr, "[webot_lidar] Parse error: {}\n", e.what());
+                }
             }
+            socket.close();
             fmt::print(stderr, "[webot_lidar] Recv thread exit\n");
         });
     return webots_lidar_ptr;
@@ -118,7 +108,7 @@ std::shared_ptr<webot_lidar> hsm::make_webot_lidar(std::string const& host, size
 webot_lidar::~webot_lidar()
 {
     this->running_label.store(false);
-    fmt::print("[webot_lidar] Shutdown\n");
+    fmt::print("[webot_lidar] 已析构\n");
 }
 
 bool webot_lidar::get_points(timestamped<point_data>& out)
@@ -126,7 +116,12 @@ bool webot_lidar::get_points(timestamped<point_data>& out)
     return _point_queue.try_dequeue(out);
 }
 
-bool webot_lidar::get_imu(timestamped<imu_data>& out)
+bool webot_lidar::get_accel(timestamped<imu_data>& out)
 {
-    return _imu_queue.try_dequeue(out);
+    return _accel_queue.try_dequeue(out);
+}
+
+bool webot_lidar::get_gyro(timestamped<imu_data>& out)
+{
+    return _gyro_queue.try_dequeue(out);
 }

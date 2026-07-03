@@ -7,20 +7,29 @@
 
 #include "Eigen/Core"
 
-#define SKEW_SYM_MATRX(v) 0.0, -v[2], v[1], v[2], 0.0, -v[0], -v[1], v[0], 0.0
-
 namespace hsm
 {
+    /// 类型安全的反对称矩阵构造
     template<typename T>
-    Eigen::Matrix<T, 3, 3> Exp(const Eigen::Matrix<T, 3, 1>&& ang)
+    inline Eigen::Matrix<T, 3, 3> skew_symmetric(Eigen::Matrix<T, 3, 1> const& v)
     {
-        T                      ang_norm = ang.norm();
-        Eigen::Matrix<T, 3, 3> Eye3     = Eigen::Matrix<T, 3, 3>::Identity();
-        if (ang_norm > 0.0000001)
+        Eigen::Matrix<T, 3, 3> mat;
+        mat << T(0), -v(2), v(1), v(2), T(0), -v(0), -v(1), v(0), T(0);
+        return mat;
+    }
+
+    template<typename T>
+    Eigen::Matrix<T, 3, 3> Exp(Eigen::Matrix<T, 3, 1> const&& ang)
+    {
+        T ang_norm = ang.norm();
+
+        Eigen::Matrix<T, 3, 3> Eye3 = Eigen::Matrix<T, 3, 3>::Identity();
+
+        if (ang_norm > static_cast<T>(1e-7))
         {
             Eigen::Matrix<T, 3, 1> r_axis = ang / ang_norm;
             Eigen::Matrix<T, 3, 3> K;
-            K << SKEW_SYM_MATRX(r_axis);
+            K << skew_symmetric(r_axis);
             /// Roderigous Tranformation
             return Eye3 + std::sin(ang_norm) * K + (1.0 - std::cos(ang_norm)) * K * K;
         }
@@ -31,17 +40,18 @@ namespace hsm
     }
 
     template<typename T, typename Ts>
-    Eigen::Matrix<T, 3, 3> Exp(const Eigen::Matrix<T, 3, 1>& ang_vel, const Ts& dt)
+    Eigen::Matrix<T, 3, 3> Exp(Eigen::Matrix<T, 3, 1> const& ang_vel, Ts const& dt)
     {
-        T                      ang_vel_norm = ang_vel.norm();
-        Eigen::Matrix<T, 3, 3> Eye3         = Eigen::Matrix<T, 3, 3>::Identity();
+        T ang_vel_norm = ang_vel.norm();
 
-        if (ang_vel_norm > 0.0000001)
+        Eigen::Matrix<T, 3, 3> Eye3 = Eigen::Matrix<T, 3, 3>::Identity();
+
+        if (ang_vel_norm > static_cast<T>(1e-7))
         {
             Eigen::Matrix<T, 3, 1> r_axis = ang_vel / ang_vel_norm;
             Eigen::Matrix<T, 3, 3> K;
 
-            K << SKEW_SYM_MATRX(r_axis);
+            K << skew_symmetric(r_axis);
 
             T r_ang = ang_vel_norm * dt;
 
@@ -55,15 +65,17 @@ namespace hsm
     }
 
     template<typename T>
-    Eigen::Matrix<T, 3, 3> Exp(const T& v1, const T& v2, const T& v3)
+    Eigen::Matrix<T, 3, 3> Exp(T const& v1, T const& v2, T const& v3)
     {
-        T&&                    norm = sqrt(v1 * v1 + v2 * v2 + v3 * v3);
+        T&& norm = sqrt(v1 * v1 + v2 * v2 + v3 * v3);
+
         Eigen::Matrix<T, 3, 3> Eye3 = Eigen::Matrix<T, 3, 3>::Identity();
-        if (norm > 0.00001)
+
+        if (norm > static_cast<T>(1e-5))
         {
             T                      r_ang[3] = {v1 / norm, v2 / norm, v3 / norm};
             Eigen::Matrix<T, 3, 3> K;
-            K << SKEW_SYM_MATRX(r_ang);
+            K << skew_symmetric(r_ang);
 
             /// Roderigous Tranformation
             return Eye3 + std::sin(norm) * K + (1.0 - std::cos(norm)) * K * K;
@@ -76,19 +88,24 @@ namespace hsm
 
     /* Logrithm of a Rotation Matrix */
     template<typename T>
-    Eigen::Matrix<T, 3, 1> Log(const Eigen::Matrix<T, 3, 3>& R)
+    Eigen::Matrix<T, 3, 1> Log(Eigen::Matrix<T, 3, 3> const& R)
     {
-        T                      theta = (R.trace() > 3.0 - 1e-6) ? 0.0 : std::acos(0.5 * (R.trace() - 1));
+        T theta = (R.trace() > 3.0 - 1e-6) ? 0.0 : std::acos(0.5 * (R.trace() - 1));
+
         Eigen::Matrix<T, 3, 1> K(R(2, 1) - R(1, 2), R(0, 2) - R(2, 0), R(1, 0) - R(0, 1));
+
         return (std::abs(theta) < 0.001) ? (0.5 * K) : (0.5 * theta / std::sin(theta) * K);
     }
 
     template<typename T>
-    Eigen::Matrix<T, 3, 1> RotMtoEuler(const Eigen::Matrix<T, 3, 3>& rot)
+    Eigen::Matrix<T, 3, 1> RotMtoEuler(Eigen::Matrix<T, 3, 3> const& rot)
     {
-        T    sy       = sqrt(rot(0, 0) * rot(0, 0) + rot(1, 0) * rot(1, 0));
-        bool singular = sy < 1e-6;
-        T    x, y, z;
+        T sy = sqrt(rot(0, 0) * rot(0, 0) + rot(1, 0) * rot(1, 0));
+
+        bool singular = sy < static_cast<T>(1e-6);
+
+        T x, y, z;
+
         if (! singular)
         {
             x = atan2(rot(2, 1), rot(2, 2));
