@@ -105,7 +105,7 @@ std::unique_ptr<livox_lidar> hsm::make_livox_lidar(std::filesystem::path const& 
     throw_if(! label, fmt::format(FMT_COMPILE("LivoxLidarSdkInit fail!,激光雷达初始化失败\n")));
 
     SetLivoxLidarPointCloudCallBack(_livox_point_callback, nullptr);
-    SetLivoxLidarImuDataCallback(_livox_imu_callback, lidar_ptr.get());
+    SetLivoxLidarImuDataCallback(_livox_imu_callback, nullptr);
     SetLivoxLidarInfoChangeCallback(_livox_device_online_callback, nullptr);
 
     fmt::print("[Livox] 激光雷达初始化完成\n");

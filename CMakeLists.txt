@@ -48,7 +48,6 @@ add_executable(
     src/common/enhanced_exception.hpp
     src/common/struct.hpp
     src/common/so3_math.hpp
-    src/common/zstd_warpper.hpp
     src/time_sync/time_sync.hpp
     src/time_sync/time_sync.cpp
     src/sensor/hk_camera.hpp
@@ -111,7 +110,6 @@ add_executable(
     src/common/enhanced_exception.hpp
     src/common/struct.hpp
     src/common/so3_math.hpp
-    src/common/zstd_warpper.hpp
 )
 target_include_directories(
     ${PROJECT_NAME}_zstdtest PRIVATE
